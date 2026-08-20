@@ -11,6 +11,14 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="COMPLIANCE_", env_file=".env")
 
     corpus_dir: Path = Path("data/corpus")
+    corpus_manifest: Path = Path("data/corpus/manifest.yaml")
+    corpus_fetch_timeout_seconds: float = Field(default=120.0, gt=0.0)
+    corpus_fetch_chunk_bytes: int = Field(default=64 * 1024, gt=0)
+    corpus_fetch_user_agent: str = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36"
+    )
+    corpus_fetch_referer: str = "https://www.rbi.org.in/"
 
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "regulations"

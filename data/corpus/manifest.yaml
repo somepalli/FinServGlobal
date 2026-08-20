@@ -9,6 +9,8 @@ documents:
     title: Master Direction - Know Your Customer
     version: "2016-amended"
     covers: [cross-border-payment, non-kyc-counterparty]
+    source_url: https://www.rbi.org.in/commonman/Upload/English/Notification/PDFs/MD18KYCF6E92C82E1E1419D87323E3869BC9F13.pdf
+    sha256: e525b18753fd08ffad04898202402cad37ad9be10ffa088b7ec2a37e288670ad
 
   - doc_id: rbi-lef
     framework: RBI
@@ -16,6 +18,8 @@ documents:
     title: Large Exposures Framework
     version: "2019"
     covers: [intra-group-derivative, large-exposure]
+    source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NOTI196099C6B756EDB4C2AAEEC2EE45BCCA122.PDF
+    sha256: 08aeeaf96157e27b0eb5f53fd9154545d98b111d5a47acb0116c8af3375d4b90
 
   - doc_id: rbi-psl
     framework: RBI
@@ -23,6 +27,8 @@ documents:
     title: Master Direction - Priority Sector Lending
     version: "2020-amended"
     covers: [nbfc-lending, priority-sector-reporting]
+    source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/MDPSL803EE903174E4C85AFA14C335A5B0909.PDF
+    sha256: 31dfd5bc3086d191cabebdcdb8edb5e5b48e26d6adb2eebb93e4bc0787fdba46
 
   - doc_id: mifid2-dir
     framework: MiFID II
@@ -30,6 +36,8 @@ documents:
     title: Directive 2014/65/EU
     version: "2014"
     covers: [appropriateness-assessment, complex-product]
+    source_url: https://publications.europa.eu/resource/cellar/056587cf-f1f8-11e3-8cd4-01aa75ed71a1.0006.01/DOC_1
+    sha256: 28dfda0f6a6539b664f823d42041f6bc2a989734d065b9cce0257a991c1a6338
 
   - doc_id: basel3-d424
     framework: Basel III
@@ -37,3 +45,5 @@ documents:
     title: Basel III - Finalising post-crisis reforms (d424)
     version: "2017"
     covers: [tier-1-capital, capital-adequacy]
+    source_url: https://www.bis.org/bcbs/publ/d424.pdf
+    sha256: 32afd37cade34f8439bdc16f606d5520d4612b7339ef1cf8c44ebb706df6bac4

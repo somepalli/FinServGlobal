@@ -16,6 +16,7 @@ dependencies = [
     "structlog>=24.4",
     "opentelemetry-sdk>=1.28",
     "opentelemetry-instrumentation-fastapi>=0.49b0",
+    "PyYAML>=6.0",
 ]
 
 [dependency-groups]
