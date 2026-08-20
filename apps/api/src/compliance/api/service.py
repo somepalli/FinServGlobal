@@ -9,6 +9,7 @@ import asyncpg  # type: ignore[import-untyped]  # The package has no PEP 561 mar
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
 
+from compliance.agent.graph import PostgresScreeningService
 from compliance.config.settings import Settings
 from compliance.db import DatabasePool
 from compliance.retrieval.answer import LocalLlmGenerator, build_answer
@@ -25,7 +26,6 @@ from compliance.schemas import (
     QueryRequest,
     ReadinessStatus,
     RetrievedClause,
-    RiskRating,
     TextPair,
     TransactionPayload,
 )
@@ -55,6 +55,12 @@ class _Generator(Protocol):
 
 class _QdrantHealth(Protocol):
     def collection_exists(self, collection_name: str) -> bool: ...
+
+
+class _Screening(Protocol):
+    async def assess(
+        self, payload: TransactionPayload, *, thread_id: str
+    ) -> ComplianceAssessment: ...
 
 
 class QueryService:
@@ -197,38 +203,30 @@ class ApiServices:
         audit: AuditRepository,
         documents: DocumentRepository,
         readiness: DependencyChecker,
+        screening: _Screening,
     ) -> None:
         self.query = query
         self.audit = audit
         self.documents = documents
         self.readiness = readiness
+        self.screening = screening
 
 
 def create_services(settings: Settings, pool: DatabasePool, qdrant: QdrantClient) -> ApiServices:
     embedder = BgeM3Embedder(settings)
     reranker = BgeReranker(settings)
+    searcher = HybridSearcher(qdrant, embedder, settings)
+    audit = AuditRepository(pool)
     query = QueryService(
-        HybridSearcher(qdrant, embedder, settings),
+        searcher,
         reranker,
         LocalLlmGenerator(settings),
         settings,
     )
     return ApiServices(
         query=query,
-        audit=AuditRepository(pool),
+        audit=audit,
         documents=DocumentRepository(pool),
         readiness=DependencyChecker(pool, qdrant, settings),
-    )
-
-
-def screen_stub(payload: TransactionPayload) -> ComplianceAssessment:
-    return ComplianceAssessment(
-        txn_id=payload.txn_id,
-        risk_rating=RiskRating.MEDIUM,
-        applicable_regulations=[],
-        required_actions=[],
-        citations=[],
-        unresolved_questions=["Automated screening is implemented in Task08."],
-        model_version="stub",
-        prompt_version="stub",
+        screening=PostgresScreeningService(searcher, audit, settings),
     )

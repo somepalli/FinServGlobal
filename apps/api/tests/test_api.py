@@ -3,6 +3,7 @@ from datetime import date
 from types import TracebackType
 from warnings import catch_warnings, simplefilter
 
+from compliance.agent.graph import build_agent
 from compliance.api.main import create_app
 from compliance.api.service import (
     ApiServices,
@@ -15,6 +16,7 @@ from compliance.config.settings import Settings
 from compliance.retrieval.rerank import BgeReranker
 from compliance.schemas import Clause, RetrievedClause
 from fastapi.testclient import TestClient
+from langgraph.checkpoint.memory import MemorySaver
 
 
 class _AsyncContext:
@@ -151,11 +153,13 @@ def _services(*, qdrant_healthy: bool = True) -> tuple[ApiServices, _Connection]
     connection = _Connection()
     pool = _Pool(connection)
     reranker = BgeReranker(settings, model=_RerankerModel())
+    audit = AuditRepository(pool)
     services = ApiServices(
         query=QueryService(_Searcher(), reranker, _Generator(), settings),
-        audit=AuditRepository(pool),
+        audit=audit,
         documents=DocumentRepository(pool),
         readiness=DependencyChecker(pool, _QdrantHealth(healthy=qdrant_healthy), settings),
+        screening=build_agent(_Searcher(), audit, settings, MemorySaver()),
     )
     return services, connection
 
@@ -201,7 +205,7 @@ def test_query_returns_answer_and_writes_audit_event() -> None:
     assert connection.executed[0][1][1] == "query.completed"
 
 
-def test_screen_stub_writes_audit_event() -> None:
+def test_screen_runs_agent_and_writes_audit_events() -> None:
     services, connection = _services()
 
     with TestClient(create_app(services=services)) as client:
@@ -209,7 +213,10 @@ def test_screen_stub_writes_audit_event() -> None:
 
     assert response.status_code == 200
     assert response.json()["risk_rating"] == "medium"
-    assert connection.executed[0][1][1] == "screen.completed"
+    actions = [args[1] for _query, args in connection.executed]
+    assert "agent.extract.completed" in actions
+    assert "agent.validate.completed" in actions
+    assert "screen.completed" in actions
 
 
 def test_validation_errors_use_problem_details() -> None:

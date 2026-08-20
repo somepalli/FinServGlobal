@@ -16,7 +16,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 from starlette.types import StatelessLifespan
 
-from compliance.api.service import ApiServices, create_services, screen_stub
+from compliance.api.service import ApiServices, create_services
 from compliance.config.settings import Settings, get_settings
 from compliance.db import create_pool
 from compliance.schemas import (
@@ -170,7 +170,9 @@ def _install_action_routes(app: FastAPI) -> None:
 
     @app.post("/screen", response_model=ComplianceAssessment)
     async def screen(payload: TransactionPayload, request: Request) -> ComplianceAssessment:
-        assessment = screen_stub(payload)
+        assessment = await _services(request).screening.assess(
+            payload, thread_id=payload.txn_id
+        )
         event = AuditEventInput(
             actor="api",
             action="screen.completed",

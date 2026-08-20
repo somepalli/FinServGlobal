@@ -156,6 +156,48 @@ class TransactionPayload(BaseModel):
     kyc_status: bool | None = None
 
 
+class TransactionFacts(BaseModel):
+    txn_id: str
+    amount: Decimal | None
+    currency: str | None
+    counterparty_type: str | None
+    jurisdictions: list[Literal["IN", "EU", "US", "GLOBAL"]]
+    instrument: str | None
+    kyc_status: bool | None
+    missing_fields: list[str]
+
+
+class FrameworkTarget(BaseModel):
+    framework: str
+    jurisdiction: Literal["IN", "EU", "US", "GLOBAL"]
+
+
+class FrameworkScope(BaseModel):
+    targets: list[FrameworkTarget]
+
+
+class RetrievalRequest(BaseModel):
+    query: str
+    framework: str
+    jurisdiction: Literal["IN", "EU", "US", "GLOBAL"]
+
+
+class FrameworkRetrieval(BaseModel):
+    target: FrameworkTarget
+    clauses: list[RetrievedClause]
+
+
+class CrossReference(BaseModel):
+    frameworks: list[str] = Field(min_length=2)
+    clause_ids: list[str] = Field(min_length=2)
+    shared_terms: list[str]
+
+
+class CitationValidation(BaseModel):
+    valid: bool
+    problems: list[str]
+
+
 class DependencyStatus(BaseModel):
     name: str
     healthy: bool
