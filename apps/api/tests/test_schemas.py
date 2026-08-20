@@ -22,6 +22,21 @@ def test_clause_preserves_required_provenance() -> None:
     assert clause.effective_to is None
 
 
+def test_clause_path_cannot_be_empty() -> None:
+    with pytest.raises(ValidationError):
+        Clause(
+            clause_id="rbi-kyc-md:2016-amended:3.1.2",
+            doc_id="rbi-kyc-md",
+            version="2016-amended",
+            jurisdiction="IN",
+            framework="RBI",
+            clause_path="   ",
+            text="A regulated entity must retain the record.",
+            effective_from=date(2016, 2, 25),
+            effective_to=None,
+        )
+
+
 def test_citation_support_must_be_a_probability() -> None:
     with pytest.raises(ValidationError):
         Citation(clause_id="c1", clause_path="1", quote="text", support=1.01)
