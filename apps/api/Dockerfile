@@ -10,6 +10,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY apps/api/src apps/api/src
 COPY apps/api/migrations apps/api/migrations
+COPY data/corpus/manifest.yaml data/corpus/manifest.yaml
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev
 
 FROM python:3.12-slim-bookworm
