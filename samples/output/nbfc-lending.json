@@ -1,0 +1,64 @@
+{
+  "txn_id": "sample-nbfc-lending",
+  "risk_rating": "low",
+  "applicable_regulations": [
+    "RBI"
+  ],
+  "required_actions": [
+    "Report the lending exposure under the priority sector category.",
+    "Review the cited RBI obligations before processing."
+  ],
+  "citations": [
+    {
+      "clause_id": "rbi-psl:2020-amended:25",
+      "clause_path": "CHAPTER IV MISCELLANEOUS > 25",
+      "quote": "25. Co-lending by Banks and NBFCs to priority sector (not applicable to RRBs, UCBs, SFBs and LABs) All Scheduled Commercial Banks (excluding SFBs, RRBs, UCBs and LABs) are permitted to co-lend with all registered Non-Banking Financial Companies (including Housing Finance Companies) for lending to the priority sector. Detailed guidelines, in this regard, have been issued vide our circular FIDD.CO.Plan.BC.No.8/04.09.01/2020-21 dated November 5, 2020. For the sake of business continuity and to ensure uninterrupted flow of credit to the priority sector, banks may continue existing arrangement as per earlier guidelines on co-origination, issued vide our circular No. FIDD.CO.Plan.BC/08/04.09.01/2018-19 dated September 21, 2018, till the Board approved co-lending policy is put in place by them.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-psl:2020-amended:8.6",
+      "clause_path": "CHAPTER - III DESCRIPTION OF ELIGIBLE CATEGORIES UNDER PRIORITY SECTOR > 8 > 8.6",
+      "quote": "8.6 Lending by banks to NBFCs and MFIs for on-lending in agriculture (i) Bank credit extended to registered NBFC-MFIs and other MFIs (Societies, Trusts etc.) which are members of RBI recognised SRO for the sector, for on-lending to individuals and also to members of SHGs / JLGs will be eligible for categorisation as priority sector advance under respective categories of agriculture subject to conditions specified in para 21 (not applicable to RRBs, UCBs, SFBs and LABs). (ii) Bank credit to registered NBFCs (other than MFIs) towards on-lending for 'Term lending' component under agriculture will be allowed up to ₹ 10 lakh per borrower subject to conditions specified in para 22 and 24 (not applicable to RRBs, UCBs, SFBs and LABs).",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-psl:2020-amended:9.2+9.3",
+      "clause_path": "CHAPTER - III DESCRIPTION OF ELIGIBLE CATEGORIES UNDER PRIORITY SECTOR > 9 > 9.2 + 9.3",
+      "quote": "9.2 Khadi and Village Industries Sector (KVI) All loans to units in the KVI sector will be eligible for classification under the subtarget of 7.5 percent prescribed for Micro Enterprises under priority sector. 9.3 Other Finance to MSMEs (i) Loans up to ₹50 crore to Start-ups, as per definition of Ministry of Commerce and Industry, Govt. of India that conform to the definition of MSME as per Para 9. (ii) Loans to entities involved in assisting the decentralized sector in the supply of inputs and marketing of output of artisans, village and cottage industries. In respect of UCBs, the term 'entities' shall not include institutions to which UCBs are not permitted to lend under the RBI guidelines / the legal framework governing their functioning. (iii) Loans to co-operatives of producers in the decentralized sector viz. artisans, village and cottage industries (Not applicable for UCBs). (iv) Loans sanctioned by banks to NBFC-MFIs and other MFIs (Societies, Trusts etc.) which are members of RBI recognised SRO for the sector for on-lending to MSME sector as per the conditions specified in paragraph 21 of these Master Directions (not applicable to RRBs, SFBs and UCBs) (vi) Credit outstanding under General Credit Cards (including Artisan Credit Card, Laghu Udyami Card, Swarojgar Credit Card and Weaver's Card etc. in existence and catering to the non-farm entrepreneurial credit needs of individuals). (v) Loans to registered NBFCs (other than MFIs) for on-lending to Micro & Small Enterprises as per conditions specified in para 22 of these Master Directions (not applicable to RRBs, SFBs and UCBs) Withdrawn w.e.f April 01, 2025 (vii) Overdraft to Pradhan Mantri Jan-Dhan Yojana (PMJDY) account holders as per limits and conditions prescribed by Department of Financial Services, Ministry of Finance from time to time, will qualify as achievement of the target for lending to Micro Enterprises. (viii) Outstanding deposits with SIDBI and MUDRA Ltd. on account of priority sector shortfall.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-psl:2020-amended:9.1",
+      "clause_path": "CHAPTER - III DESCRIPTION OF ELIGIBLE CATEGORIES UNDER PRIORITY SECTOR > 9 > 9.1",
+      "quote": "9.1 Factoring Transactions (not applicable to RRBs and UCBs) (i) 'With Recourse' Factoring transactions by banks which carry out the business of factoring departmentally wherever the 'assignor' is a Micro, Small or Medium Enterprise would be eligible for classification under MSME category on the reporting dates. (ii) In terms of paragraph 9 of Circular DBR.No. FSD.BC.32/24.01.007/201516 dated July 30, 2015 on 'Provision of Factoring Services by BanksReview', inter-alia, the borrower's bank shall obtain from the borrower, periodical certificates regarding factored receivables to avoid double financing/ counting. Further, the 'factors' must intimate the limits sanctioned to the borrower and details of debts factored to the banks concerned, taking responsibility to avoid double financing. Withdrawn w.e.f April 01, 2025 (iii) Factoring transactions pertaining to MSMEs taking place through the Trade Receivables Discounting System (TReDS) shall also be eligible for classification under priority sector.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-psl:2020-amended:23",
+      "clause_path": "CHAPTER IV MISCELLANEOUS > 22 > 23",
+      "quote": "23. Bank loans to HFCs for on-lending (not applicable to RRBs, SFBs and LABs) Bank credit to Housing Finance Companies (HFCs), approved by NHB for their refinance, for on-lending for the purpose of purchase/construction/ reconstruction of individual dwelling units or for slum clearance and rehabilitation of slum dwellers, subject to an aggregate loan limit of ₹20 lakh per borrower. Banks should maintain necessary borrower-wise details of the underlying portfolio. 24. Cap on On-lending Withdrawn w.e.f April 01, 2025 Bank credit to NBFCs (including HFCs) for on-lending as applicable in para 22 and 23 above, will be allowed up to an overall limit of five percent of individual bank's total priority sector lending. Banks shall compute the eligible portfolio under onlending mechanism by averaging across four quarters, to determine adherence to the prescribed cap.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-psl:2020-amended:28",
+      "clause_path": "CHAPTER IV MISCELLANEOUS > 28",
+      "quote": "28. Non-achievement of Priority Sector targets (i) Banks having any shortfall in lending to priority sector shall be allocated amounts for contribution to the Rural Infrastructure Development Fund (RIDF) established with NABARD and other funds with NABARD/NHB/SIDBI/ MUDRA Ltd., as decided by the Reserve Bank from time to time. (ii) With effect from March 31, 2023, all UCBs (excluding those under all-inclusive directions) will be required to contribute to Rural Infrastructure Development Fund (RIDF) established with NABARD and other funds with NABARD / NHB / SIDBI / MUDRA Ltd., against their priority sector lending (PSL) shortfall vis-àvis the prescribed target. (iii) While computing priority sector target achievement, shortfall / excess lending for each quarter will be monitored separately. A simple average of all quarters will be arrived at and considered for computation of overall shortfall / excess at the end of the year. The same method will be followed for calculating the achievement of priority sector sub-targets. (Illustration given in Annex IV). (iv) The interest rates on banks' contribution to RIDF or any other funds, tenure of deposits, etc. shall be fixed by Reserve Bank of India from time to time. (v) The mis-classifications reported by the Reserve Bank's Department of Supervision (DoS) (NABARD in respect of RRBs) would be adjusted/ reduced from the achievement of that year, to which the amount of misclassification pertains, for allocation to various funds in subsequent years. (vi) Non-achievement of priority sector targets and sub-targets will be taken into account while granting regulatory clearances/approvals for various purposes. 29. Common guidelines for priority sector loans Withdrawn w.e.f April 01, 2025 Banks should comply with the following common guidelines for all categories of advances under the priority sector. (i) Rate of interest: The rates of interest on bank loans will be as per directives issued by Department of Regulation (DoR), RBI from time to time. (ii) Service charges: No loan related and ad hoc service charges/inspection charges should be levied on priority sector loans up to ₹25,000. In the case of eligible priority sector loans to SHGs/ JLGs, this limit will be applicable per member and not to the group as a whole. (iii) Receipt, Sanction/Rejection/Disbursement Register: A register/ electronic record should be maintained by the bank wherein the date of receipt, sanction/rejection/disbursement with reasons thereof, etc. should be recorded. The register/electronic record should be made available to all inspecting agencies. (iv) Issue of acknowledgement of loan applications: Banks should provide acknowledgement for loan applications received under priority sector loans. Bank Boards should prescribe a time limit within which the bank communicates its decision in writing to the applicants. ~*~*~*~*~*~*~",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-kyc-md:2016-amended:24",
+      "clause_path": "Chapter VI > Customer Due Diligence (CDD) Procedure > Part I - Customer Due Diligence (CDD) Procedure in case of Individuals > 18 > (c) V-CIP Records and Data Management > 24",
+      "quote": "24. 79 Simplified procedure for opening accounts by Non-Banking Finance Companies (NBFCs) : In case a person who desires to open an account is not able to produce documents, as specified in paragraph 16, NBFCs may at their discretion open accounts subject to the following conditions: (a) The NBFC shall obtain a self-attested photograph from the customer. (b) The designated officer of the NBFC certifies under his signature that the person opening the account has affixed his signature or thumb impression in his presence. (c) 80 The account shall remain operational initially for a period of twelve months, within which CDD as per paragraph 16 or paragraph 18 shall be carried out. 76 Inserted vide circular DOR.AML.BC.No.66/14.01.001/2019-20 dated April 20, 2020. 77 Amended vide circular DOR.AML.REC.111/14.01.001/2023-24 dated April 28, 2023. 78 Amended vide circular DOR.AML.REC.111/14.01.001/2023-24 dated April 28, 2023. 79 Amended vide circular DBR.AML.BC.No.39/14.01.001/2018-19 dated May 29, 2019 . 80 Amended vide circular DOR.AML.REC.111/14.01.001/2023-24 dated April 28, 2023. (d) Balances in all their accounts taken together shall not exceed rupees fifty thousand at any point of time. (e) The total credit in all the accounts taken together shall not exceed rupees one lakh in a year. (f) The customer shall be made aware that no further transactions will be permitted until the full KYC procedure is completed in case Directions (d) and (e) above are breached by him. (g) The customer shall be notified when the balance reaches rupees forty thousand or the total credit in a year reaches rupees eighty thousand that appropriate documents for conducting the KYC must be submitted otherwise the operations in the account shall be stopped when the total balance in all the accounts taken together exceeds the limits prescribed in direction (d) and (e) above. (h) 81 The account shall be monitored and when there is suspicion of ML/TF activities or other high-risk scenarios, the identity of the customer shall be established as per paragraph 16 or paragraph 18.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-psl:2020-amended:5.4",
+      "clause_path": "CHAPTER - I PRELIMINARY > 5 > 5.3 > 5.4",
+      "quote": "5.4 All domestic banks (other than UCBs) and foreign banks with more than 20 branches are directed to ensure that the overall lending to Non-Corporate Farmers (NCFs) does not fall below the system-wide average of the last three years' achievement which will be separately notified every year. The applicable target for lending to the non-corporate farmers for FY 2022-23 will be 13.78% of ANBC or CEOBE whichever is higher. All efforts should be made by banks to increase the Farm Credit (as per para 8.1) higher than the NCF target.",
+      "support": 1.0
+    }
+  ],
+  "unresolved_questions": [],
+  "model_version": "deterministic-assessment-v1",
+  "prompt_version": "source-actions-v1"
+}

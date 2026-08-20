@@ -7,6 +7,7 @@ from typing import Literal, Protocol, TypedDict, cast
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from pydantic import JsonValue
@@ -30,6 +31,7 @@ from compliance.schemas import (
     CrossReference,
     FrameworkRetrieval,
     FrameworkScope,
+    RiskRating,
     TransactionFacts,
     TransactionPayload,
 )
@@ -91,7 +93,10 @@ class _Nodes:
 
     async def retrieve(self, state: AgentState) -> AgentState:
         facts = state["facts"]
-        requests = [retrieval_request(facts, target) for target in state["scope"].targets]
+        requests = [
+            retrieval_request(facts, target, self._settings.rerank_top_k)
+            for target in state["scope"].targets
+        ]
         retrievals = list(
             await asyncio.gather(
                 *(retrieve_framework(request, self._searcher) for request in requests)
@@ -208,6 +213,20 @@ def build_agent(
     return ComplianceAgent(_compile(_Nodes(searcher, audit, settings), checkpointer))
 
 
+def _checkpoint_serializer() -> JsonPlusSerializer:
+    allowed_types = [
+        TransactionPayload,
+        TransactionFacts,
+        FrameworkScope,
+        FrameworkRetrieval,
+        CrossReference,
+        ComplianceAssessment,
+        CitationValidation,
+        RiskRating,
+    ]
+    return JsonPlusSerializer(allowed_msgpack_modules=allowed_types)
+
+
 class PostgresScreeningService:
     def __init__(self, searcher: SearchTool, audit: AuditTool, settings: Settings) -> None:
         self._searcher = searcher
@@ -215,12 +234,16 @@ class PostgresScreeningService:
         self._settings = settings
 
     async def assess(self, payload: TransactionPayload, *, thread_id: str) -> ComplianceAssessment:
-        async with AsyncPostgresSaver.from_conn_string(str(self._settings.database_url)) as saver:
+        async with AsyncPostgresSaver.from_conn_string(
+            str(self._settings.database_url), serde=_checkpoint_serializer()
+        ) as saver:
             await saver.setup()
             agent = build_agent(self._searcher, self._audit, self._settings, saver)
             return await agent.assess(payload, thread_id=thread_id)
 
     async def replay(self, thread_id: str) -> ComplianceAssessment:
-        async with AsyncPostgresSaver.from_conn_string(str(self._settings.database_url)) as saver:
+        async with AsyncPostgresSaver.from_conn_string(
+            str(self._settings.database_url), serde=_checkpoint_serializer()
+        ) as saver:
             agent = build_agent(self._searcher, self._audit, self._settings, saver)
             return await agent.replay(thread_id)

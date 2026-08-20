@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     corpus_dir: Path = Path("data/corpus")
     corpus_manifest: Path = Path("data/corpus/manifest.yaml")
+    samples_dir: Path = Path("samples")
     corpus_fetch_timeout_seconds: float = Field(default=120.0, gt=0.0)
     corpus_fetch_chunk_bytes: int = Field(default=64 * 1024, gt=0)
     corpus_fetch_user_agent: str = (

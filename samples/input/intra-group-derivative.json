@@ -1,0 +1,10 @@
+{
+  "txn_id": "sample-intra-group-derivative",
+  "amount": "750000000.00",
+  "currency": "INR",
+  "counterparty_type": "intra-group banking entity",
+  "jurisdictions": ["IN", "GLOBAL"],
+  "instrument": "intra-group derivative above the large exposure threshold",
+  "kyc_status": true,
+  "large_exposure_threshold_exceeded": true
+}

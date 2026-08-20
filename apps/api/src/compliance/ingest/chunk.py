@@ -1,7 +1,9 @@
 """Turn a parsed regulation tree into citation-sized clauses."""
 
 import re
+from collections import Counter
 from dataclasses import dataclass
+from hashlib import sha256
 
 from compliance.schemas import Clause, DocumentMetadata, DocumentNode, ParsedDocument
 
@@ -158,6 +160,30 @@ def _to_clause(candidate: _Candidate, metadata: DocumentMetadata) -> Clause:
     )
 
 
+def _deduplicate(candidates: list[_Candidate]) -> list[_Candidate]:
+    seen: set[tuple[str, str]] = set()
+    unique: list[_Candidate] = []
+    for candidate in candidates:
+        identity = (candidate.path, candidate.text)
+        if identity not in seen:
+            unique.append(candidate)
+            seen.add(identity)
+    return unique
+
+
+def _unique_clauses(candidates: list[_Candidate], metadata: DocumentMetadata) -> list[Clause]:
+    base_ids = [_clause_id(metadata, candidate.path) for candidate in candidates]
+    counts = Counter(base_ids)
+    clauses: list[Clause] = []
+    for candidate, base_id in zip(candidates, base_ids, strict=True):
+        clause = _to_clause(candidate, metadata)
+        if counts[base_id] > 1:
+            source = f"{candidate.path}\0{candidate.text}".encode()
+            clause.clause_id = f"{base_id}:{sha256(source).hexdigest()[:12]}"
+        clauses.append(clause)
+    return clauses
+
+
 def _validate_limits(minimum: int, maximum: int) -> None:
     if minimum < 0:
         raise ChunkingError("minimum token count cannot be negative")
@@ -184,7 +210,7 @@ def chunk_document(
     split = [part for item in merged for part in _split_candidate(item, max_tokens)]
     if any(not item.path.strip() or not item.text.strip() for item in split):
         raise ChunkingError("document produced an empty clause path or text")
-    clauses = [_to_clause(item, metadata) for item in split]
+    clauses = _unique_clauses(_deduplicate(split), metadata)
     identifiers = {clause.clause_id for clause in clauses}
     if len(identifiers) != len(clauses):
         raise ChunkingError("document produced duplicate clause identifiers")

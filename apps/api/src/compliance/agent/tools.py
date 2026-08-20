@@ -75,6 +75,10 @@ def extract_transaction(payload: TransactionPayload) -> TransactionFacts:
         instrument=payload.instrument,
         kyc_status=payload.kyc_status,
         missing_fields=missing,
+        high_risk_jurisdiction=payload.high_risk_jurisdiction,
+        large_exposure_threshold_exceeded=payload.large_exposure_threshold_exceeded,
+        appropriateness_assessed=payload.appropriateness_assessed,
+        priority_sector_reporting_required=payload.priority_sector_reporting_required,
     )
 
 
@@ -87,7 +91,9 @@ def classify_frameworks(facts: TransactionFacts) -> FrameworkScope:
     return FrameworkScope(targets=targets)
 
 
-def retrieval_request(facts: TransactionFacts, target: FrameworkTarget) -> RetrievalRequest:
+def retrieval_request(
+    facts: TransactionFacts, target: FrameworkTarget, top_k: int
+) -> RetrievalRequest:
     values = [
         "transaction",
         str(facts.amount) if facts.amount is not None else "",
@@ -100,6 +106,7 @@ def retrieval_request(facts: TransactionFacts, target: FrameworkTarget) -> Retri
         query=" ".join(value for value in values if value),
         framework=target.framework,
         jurisdiction=target.jurisdiction,
+        top_k=top_k,
     )
 
 
@@ -110,6 +117,7 @@ async def retrieve_framework(
         request.query,
         jurisdictions=[request.jurisdiction],
         frameworks=[request.framework],
+        top_k=request.top_k,
     )
     target = FrameworkTarget(
         framework=request.framework,
@@ -160,16 +168,38 @@ def _citations(retrievals: list[FrameworkRetrieval], narrowed: bool) -> list[Cit
     ]
 
 
-def _actions(scope: FrameworkScope, cross_refs: list[CrossReference]) -> list[str]:
+def _actions(
+    facts: TransactionFacts, scope: FrameworkScope, cross_refs: list[CrossReference]
+) -> list[str]:
     actions = [
         f"Review the cited {target.framework} obligations before processing."
         for target in scope.targets
     ]
+    if facts.kyc_status is False:
+        actions.insert(0, "Resolve KYC before processing the transaction.")
+    if facts.high_risk_jurisdiction:
+        actions.insert(0, "Apply enhanced due diligence for the high-risk jurisdiction.")
+    if facts.large_exposure_threshold_exceeded:
+        actions.insert(0, "Escalate the large exposure threshold breach before processing.")
+    if facts.appropriateness_assessed is False:
+        actions.insert(0, "Complete an appropriateness assessment before offering the product.")
+    if facts.priority_sector_reporting_required:
+        actions.insert(0, "Report the lending exposure under the priority sector category.")
     actions.extend(
         f"Review the combined obligations cited under {' and '.join(item.frameworks)}."
         for item in cross_refs
     )
-    return actions
+    return list(dict.fromkeys(actions))
+
+
+def _risk_rating(facts: TransactionFacts) -> RiskRating:
+    high_risk = (
+        facts.kyc_status is False
+        or facts.large_exposure_threshold_exceeded is True
+        or facts.appropriateness_assessed is False
+    )
+    risk = RiskRating.HIGH if high_risk else RiskRating.LOW
+    return RiskRating.MEDIUM if facts.missing_fields else risk
 
 
 def assess_compliance(
@@ -181,12 +211,8 @@ def assess_compliance(
     narrowed: bool,
 ) -> ComplianceAssessment:
     unresolved = [f"Provide {field}." for field in facts.missing_fields]
-    risk = RiskRating.HIGH if facts.kyc_status is False else RiskRating.LOW
-    if unresolved:
-        risk = RiskRating.MEDIUM
-    actions = _actions(scope, cross_refs)
-    if facts.kyc_status is False:
-        actions.insert(0, "Resolve KYC before processing the transaction.")
+    risk = _risk_rating(facts)
+    actions = _actions(facts, scope, cross_refs)
     return ComplianceAssessment(
         txn_id=facts.txn_id,
         risk_rating=risk,

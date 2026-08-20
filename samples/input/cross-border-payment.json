@@ -1,0 +1,10 @@
+{
+  "txn_id": "sample-cross-border-payment",
+  "amount": "2000000.00",
+  "currency": "USD",
+  "counterparty_type": "non-KYC counterparty in a high-risk jurisdiction",
+  "jurisdictions": ["IN"],
+  "instrument": "cross-border payment to a high-risk jurisdiction",
+  "kyc_status": false,
+  "high_risk_jurisdiction": true
+}
