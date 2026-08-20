@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     llm_model: str = "qwen2.5:7b-instruct"
     llm_timeout_seconds: float = Field(default=120.0, gt=0)
     llm_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
+    eval_judge_model: str = "gemma3:4b"
+    eval_embedding_model: str = "qwen3-embedding"
+    eval_failure_score: float = Field(default=0.7, ge=0.0, le=1.0)
+    eval_commit_sha: str = "working-tree"
 
     @property
     def is_local(self) -> bool:

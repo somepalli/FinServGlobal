@@ -1,0 +1,94 @@
+cases:
+  - case_id: eval-01
+    question: What ongoing due diligence must an RBI-regulated entity perform on customer transactions?
+    reference_answer: The entity must check that transactions remain consistent with its knowledge of the customer, the customer's business and risk profile, and the source of funds or wealth.
+    ground_truth_clause_ids: ["rbi-kyc-md:2016-amended:35+36"]
+    suites: [ci, full]
+  - case_id: eval-02
+    question: What information must the ordering regulated entity include in cross-border wire transfers?
+    reference_answer: It must include required and accurate originator information and required beneficiary information.
+    ground_truth_clause_ids: ["rbi-kyc-md:2016-amended:64#part2"]
+    suites: [full]
+  - case_id: eval-03
+    question: Which customer risk categories does the RBI KYC direction require?
+    reference_answer: Customers must be categorised as low, medium, or high risk according to the regulated entity's assessment and risk perception.
+    ground_truth_clause_ids: ["rbi-kyc-md:2016-amended:12"]
+    suites: [full]
+  - case_id: eval-04
+    question: When does an exposure qualify as a large exposure under the RBI Large Exposures Framework?
+    reference_answer: The sum of exposures to a counterparty or connected group is a large exposure when it is at least 10 percent of the bank's eligible Tier 1 capital base.
+    ground_truth_clause_ids: ["rbi-lef:2019:4"]
+    suites: [ci, full]
+  - case_id: eval-05
+    question: How must a bank treat counterparties whose dependencies mean they would likely fail together?
+    reference_answer: The counterparties form a group of connected counterparties and must be treated as a single counterparty.
+    ground_truth_clause_ids: ["rbi-lef:2019:6.1"]
+    suites: [full]
+  - case_id: eval-06
+    question: What limit applies to interbank exposures other than intraday interbank exposures?
+    reference_answer: They are subject to a limit of 25 percent of the bank's Tier 1 capital.
+    ground_truth_clause_ids: ["rbi-lef:2019:8.2"]
+    suites: [full]
+  - case_id: eval-07
+    question: Which renewable-energy loans qualify for priority-sector classification under the RBI direction?
+    reference_answer: Bank loans up to 30 crore rupees to borrowers for listed renewable and non-conventional energy purposes qualify; individual household loans are capped at 10 lakh rupees.
+    ground_truth_clause_ids: ["rbi-psl:2020-amended:14"]
+    suites: [ci, full]
+  - case_id: eval-08
+    question: How often does RBI monitor priority-sector lending compliance, and when must banks report the data?
+    reference_answer: Compliance is monitored quarterly. Banks submit quarterly data within 15 days after quarter end and annual data within one month after year end.
+    ground_truth_clause_ids: ["rbi-psl:2020-amended:27"]
+    suites: [full]
+  - case_id: eval-09
+    question: Can bank lending to NBFC-MFIs for agricultural on-lending count as priority-sector lending?
+    reference_answer: Yes. Credit to registered NBFC-MFIs and qualifying other MFIs for on-lending may be classified under the relevant agriculture categories, subject to the stated conditions.
+    ground_truth_clause_ids: ["rbi-psl:2020-amended:8.6"]
+    suites: [full]
+  - case_id: eval-10
+    question: What standard does MiFID II set for information and marketing communications sent to clients?
+    reference_answer: All information must be fair, clear, and not misleading, and marketing communications must be identifiable as such.
+    ground_truth_clause_ids: ["mifid2-dir:2014:3+4:8ea1b00cd0ac"]
+    suites: [ci, full]
+  - case_id: eval-11
+    question: What is a professional client under MiFID II?
+    reference_answer: A professional client is a client meeting the criteria in Annex II of the Directive.
+    ground_truth_clause_ids: ["mifid2-dir:2014:(9)+(10):4954365a6181"]
+    suites: [full]
+  - case_id: eval-12
+    question: What may MiFID II delegated acts specify about suitability and appropriateness assessments?
+    reference_answer: They may specify the information firms obtain, the criteria used to assess suitability or appropriateness, and related compliance with the Article's principles.
+    ground_truth_clause_ids: ["mifid2-dir:2014:8:22f2f30134bf"]
+    suites: [full]
+  - case_id: eval-13
+    question: What is the purpose of the Basel III leverage ratio?
+    reference_answer: It restricts leverage build-up that could cause destabilising deleveraging and reinforces risk-based capital requirements with a non-risk-based backstop.
+    ground_truth_clause_ids: ["basel3-d424:2017:2:efd3572ed4f8"]
+    suites: [ci, full]
+  - case_id: eval-14
+    question: Which exposure categories make up the Basel III total leverage-ratio exposure measure?
+    reference_answer: It comprises on-balance-sheet exposures, derivative exposures, securities-financing-transaction exposures, and off-balance-sheet items.
+    ground_truth_clause_ids: ["basel3-d424:2017:27:81e830dd8a55"]
+    suites: [full]
+  - case_id: eval-15
+    question: What Common Equity Tier 1 capital conservation buffer does Basel III set?
+    reference_answer: Basel III sets the Common Equity Tier 1 capital conservation buffer at 2.5 percent of risk-weighted assets for all banks.
+    ground_truth_clause_ids: ["basel3-d424:2017:3+4"]
+    suites: [full]
+  - case_id: eval-16
+    question: How long may personal data be retained under GDPR Article 5?
+    reference_answer: Refuse because GDPR is outside the indexed corpus and no cited clause supports an answer.
+    ground_truth_clause_ids: []
+    should_refuse: true
+    suites: [ci, full]
+  - case_id: eval-17
+    question: What customer identification rule applied under the RBI KYC direction superseded before the indexed 2016 version?
+    reference_answer: Refuse because the corpus contains no superseded pre-2016 RBI KYC version from which to answer.
+    ground_truth_clause_ids: []
+    should_refuse: true
+    suites: [full]
+  - case_id: eval-18
+    question: What disclosure does US SEC Regulation Best Interest require before a recommendation?
+    reference_answer: Refuse because US SEC Regulation Best Interest is outside the indexed corpus.
+    ground_truth_clause_ids: []
+    should_refuse: true
+    suites: [full]

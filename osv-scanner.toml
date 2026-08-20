@@ -1,0 +1,9 @@
+[[IgnoredVulns]]
+id = "PYSEC-2026-3046"
+ignoreUntil = 2026-11-30
+reason = "The evaluation group uses text-only RAGAS metrics; the affected multimodal URL loader is not imported or called."
+
+[[IgnoredVulns]]
+id = "PYSEC-2026-2447"
+ignoreUntil = 2026-11-30
+reason = "The evaluation group does not configure a RAGAS cache, so no DiskCache data is written or deserialised."

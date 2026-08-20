@@ -55,7 +55,7 @@ class _ChatResponse(BaseModel):
     choices: list[_ChatChoice]
 
 
-def _is_internal_endpoint(url: str) -> bool:
+def is_internal_endpoint(url: str) -> bool:
     hostname = urlparse(url).hostname
     if hostname is None:
         return False
@@ -84,7 +84,7 @@ def _source_prompt(question: str, clauses: list[RetrievedClause]) -> str:
 
 class LocalLlmGenerator:
     def __init__(self, settings: Settings) -> None:
-        if not _is_internal_endpoint(settings.llm_base_url):
+        if not is_internal_endpoint(settings.llm_base_url):
             raise UnsafeLlmEndpointError("regulatory text may only be sent to an internal LLM")
         self._settings = settings
 
