@@ -1,0 +1,194 @@
+"""Expose query, screening, registry, and health endpoints."""
+
+import re
+from collections.abc import AsyncIterator, Awaitable, Callable, MutableMapping
+from contextlib import asynccontextmanager
+from typing import cast
+from uuid import uuid4
+
+import structlog
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from opentelemetry import trace
+from qdrant_client import QdrantClient
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.responses import Response
+from starlette.types import StatelessLifespan
+
+from compliance.api.service import ApiServices, create_services, screen_stub
+from compliance.config.settings import Settings, get_settings
+from compliance.db import create_pool
+from compliance.schemas import (
+    Answer,
+    AuditEventInput,
+    ComplianceAssessment,
+    DocumentInfo,
+    HealthStatus,
+    ProblemDetail,
+    QueryRequest,
+    ReadinessStatus,
+    TransactionPayload,
+)
+
+_REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
+_LOGGER = structlog.get_logger(__name__)
+
+
+def _add_trace_id(
+    _logger: object, _method: str, event: MutableMapping[str, object]
+) -> MutableMapping[str, object]:
+    context = trace.get_current_span().get_span_context()
+    event["trace_id"] = format(context.trace_id, "032x") if context.is_valid else None
+    return event
+
+
+def configure_logging() -> None:
+    structlog.configure(
+        processors=[
+            structlog.contextvars.merge_contextvars,
+            structlog.processors.add_log_level,
+            structlog.processors.TimeStamper(fmt="iso", utc=True),
+            _add_trace_id,
+            structlog.processors.JSONRenderer(),
+        ]
+    )
+
+
+def _request_id(request: Request) -> str:
+    supplied = request.headers.get("X-Request-ID", "")
+    return supplied if _REQUEST_ID.fullmatch(supplied) else str(uuid4())
+
+
+def _services(request: Request) -> ApiServices:
+    return cast(ApiServices, request.app.state.services)
+
+
+def _problem(request: Request, status: int, title: str, detail: str) -> JSONResponse:
+    problem = ProblemDetail(
+        title=title,
+        status=status,
+        detail=detail,
+        instance=request.url.path,
+        request_id=cast(str, request.state.request_id),
+    )
+    return JSONResponse(
+        status_code=status,
+        content=problem.model_dump(mode="json"),
+        media_type="application/problem+json",
+    )
+
+
+def _lifespan(
+    configured_settings: Settings | None, configured_services: ApiServices | None
+) -> StatelessLifespan[FastAPI]:
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        if configured_services is not None:
+            app.state.services = configured_services
+            yield
+            return
+        settings = configured_settings or get_settings()
+        pool = await create_pool(settings)
+        qdrant = QdrantClient(url=settings.qdrant_url)
+        app.state.services = create_services(settings, pool, qdrant)
+        try:
+            yield
+        finally:
+            qdrant.close()
+            await pool.close()
+
+    return lifespan
+
+
+def _install_middleware(app: FastAPI) -> None:
+    @app.middleware("http")
+    async def request_context(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        request_id = _request_id(request)
+        request.state.request_id = request_id
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(request_id=request_id)
+        _LOGGER.info("request_started", method=request.method, path=request.url.path)
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        _LOGGER.info("request_completed", status_code=response.status_code)
+        structlog.contextvars.clear_contextvars()
+        return response
+
+
+def _install_error_handlers(app: FastAPI) -> None:
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+        return _problem(request, 422, "Request validation failed", str(exc))
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        return _problem(request, exc.status_code, "Request failed", str(exc.detail))
+
+    @app.exception_handler(Exception)
+    async def unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+        _LOGGER.exception("unhandled_exception", error_type=type(exc).__name__)
+        return _problem(request, 500, "Internal server error", "The request could not be completed")
+
+
+def _install_read_routes(app: FastAPI) -> None:
+    @app.get("/healthz", response_model=HealthStatus)
+    async def healthz() -> HealthStatus:
+        return HealthStatus()
+
+    @app.get("/readyz", response_model=ReadinessStatus)
+    async def readyz(request: Request) -> ReadinessStatus | JSONResponse:
+        status = await _services(request).readiness.check()
+        if status.status == "not_ready":
+            return JSONResponse(status_code=503, content=status.model_dump(mode="json"))
+        return status
+
+    @app.get("/documents", response_model=list[DocumentInfo])
+    async def documents(request: Request) -> list[DocumentInfo]:
+        return await _services(request).documents.list_documents()
+
+
+def _install_action_routes(app: FastAPI) -> None:
+    @app.post("/query", response_model=Answer)
+    async def query(payload: QueryRequest, request: Request) -> Answer:
+        answer = await _services(request).query.answer(payload)
+        event = AuditEventInput(
+            actor="api",
+            action="query.completed",
+            subject_id=cast(str, request.state.request_id),
+            payload={
+                "question": payload.question,
+                "as_of": answer.as_of.isoformat(),
+                "synthesised": answer.synthesised,
+                "citation_ids": [item.clause_id for item in answer.citations],
+            },
+        )
+        await _services(request).audit.write(event)
+        return answer
+
+    @app.post("/screen", response_model=ComplianceAssessment)
+    async def screen(payload: TransactionPayload, request: Request) -> ComplianceAssessment:
+        assessment = screen_stub(payload)
+        event = AuditEventInput(
+            actor="api",
+            action="screen.completed",
+            subject_id=payload.txn_id,
+            payload=payload.model_dump(mode="json"),
+        )
+        await _services(request).audit.write(event)
+        return assessment
+
+
+def create_app(*, settings: Settings | None = None, services: ApiServices | None = None) -> FastAPI:
+    configure_logging()
+    app = FastAPI(title="FinServGlobal Compliance API", lifespan=_lifespan(settings, services))
+    _install_middleware(app)
+    _install_error_handlers(app)
+    _install_read_routes(app)
+    _install_action_routes(app)
+    return app
+
+
+app = create_app()

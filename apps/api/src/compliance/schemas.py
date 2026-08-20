@@ -1,8 +1,9 @@
 from datetime import date
+from decimal import Decimal
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl, model_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, JsonValue, model_validator
 
 
 class Clause(BaseModel):
@@ -135,3 +136,68 @@ class ComplianceAssessment(BaseModel):
     unresolved_questions: list[str]
     model_version: str
     prompt_version: str
+
+
+class QueryRequest(BaseModel):
+    question: str = Field(min_length=1)
+    as_of: date | None = None
+    jurisdictions: list[Literal["IN", "EU", "US", "GLOBAL"]] | None = None
+
+
+class TransactionPayload(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    txn_id: str = Field(min_length=1)
+    amount: Decimal | None = None
+    currency: str | None = None
+    counterparty_type: str | None = None
+    jurisdictions: list[Literal["IN", "EU", "US", "GLOBAL"]] | None = None
+    instrument: str | None = None
+    kyc_status: bool | None = None
+
+
+class DependencyStatus(BaseModel):
+    name: str
+    healthy: bool
+    detail: str | None = None
+
+
+class ReadinessStatus(BaseModel):
+    status: Literal["ready", "not_ready"]
+    dependencies: list[DependencyStatus]
+
+
+class HealthStatus(BaseModel):
+    status: Literal["ok"] = "ok"
+
+
+class DocumentVersionInfo(BaseModel):
+    version: str
+    effective_from: date
+    effective_to: date | None = None
+    supersedes: str | None = None
+
+
+class DocumentInfo(BaseModel):
+    doc_id: str
+    framework: str
+    jurisdiction: Literal["IN", "EU", "US", "GLOBAL"]
+    title: str
+    source_url: str
+    versions: list[DocumentVersionInfo]
+
+
+class AuditEventInput(BaseModel):
+    actor: str
+    action: str
+    subject_id: str
+    payload: JsonValue
+
+
+class ProblemDetail(BaseModel):
+    type: str = "about:blank"
+    title: str
+    status: int
+    detail: str
+    instance: str
+    request_id: str

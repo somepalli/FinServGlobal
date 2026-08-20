@@ -67,7 +67,10 @@ async def create_pool(
 ) -> DatabasePool:
     active_settings = settings or get_settings()
     pool = await asyncpg.create_pool(
-        dsn=str(active_settings.database_url), server_settings=server_settings
+        dsn=str(active_settings.database_url),
+        min_size=active_settings.database_pool_min_size,
+        max_size=active_settings.database_pool_max_size,
+        server_settings=server_settings,
     )
     return cast(DatabasePool, pool)
 
