@@ -102,6 +102,8 @@ async def test_graph_caps_missing_kyc_and_replays_by_thread_id() -> None:
     assert assessment == replayed
     assert assessment.risk_rating is RiskRating.MEDIUM
     assert "Provide kyc_status." in assessment.unresolved_questions
+    assert assessment.citations
+    assert all(citation.effective_from == date(2020, 1, 1) for citation in assessment.citations)
     assert search.calls == [(["IN"], ["RBI"]), (["EU"], ["MiFID II"])]
     assert [event.action for event in audit.events] == [
         "agent.extract.completed",
