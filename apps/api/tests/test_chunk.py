@@ -117,6 +117,21 @@ def test_embedding_text_does_not_replace_raw_citation_text() -> None:
     assert embedding_text(clause) == f"{clause.clause_path}\n\n{clause.text}"
 
 
+def test_duplicate_leaf_numbers_keep_distinct_identifiers() -> None:
+    chapters = [
+        DocumentNode(
+            title=chapter,
+            children=[DocumentNode(title=f"1. {text}", number="1", content=[text])],
+        )
+        for chapter, text in (("Chapter I", "First duty."), ("Chapter II", "Second duty."))
+    ]
+
+    clauses = chunk_document(_document(*chapters), _metadata(), min_tokens=0)
+
+    assert len({clause.clause_id for clause in clauses}) == 2
+    assert all(clause.clause_id.startswith("rbi-kyc-md:2016-amended:1:") for clause in clauses)
+
+
 def test_document_without_numbered_provisions_is_rejected() -> None:
     document = _document(DocumentNode(title="Unnumbered guidance"))
 

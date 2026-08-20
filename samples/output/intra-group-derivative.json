@@ -1,0 +1,115 @@
+{
+  "txn_id": "sample-intra-group-derivative",
+  "risk_rating": "high",
+  "applicable_regulations": [
+    "RBI",
+    "Basel III"
+  ],
+  "required_actions": [
+    "Escalate the large exposure threshold breach before processing.",
+    "Review the cited RBI obligations before processing.",
+    "Review the cited Basel III obligations before processing.",
+    "Review the combined obligations cited under RBI and Basel III."
+  ],
+  "citations": [
+    {
+      "clause_id": "rbi-lef:2019:8.2",
+      "clause_path": "Interbank Exposures > 8.2",
+      "quote": "8.2 The interbank exposures, except intra-day interbank exposures, will be subject to the large exposure limit of 25% of a bank's Tier 1 capital (also refer to paragraph 10.III). In stressed circumstances, RBI may accept a breach of an interbank limit ex post, in order to help ensure stability in the interbank market.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-lef:2019:7.2+7.3",
+      "clause_path": "Annex > 7.II Definitions of exposure values under the LE Framework > 7.2 + 7.3",
+      "quote": "7.2 Banking book on-balance sheet non-derivative assets: The exposure value is defined as the accounting value of the exposure 6 . As an alternative, a bank may consider the exposure value gross of specific provisions and value adjustments. 7.3 Banking book and trading book OTC derivatives (and any other instrument with counterparty credit risk): The exposure value for instruments which give rise to counterparty credit risk and are not securities financing transactions, should be determined as per the extant instructions as prescribed by the Reserve Bank (on exposure at default) for the counterparty credit risk 7 . 6 Net of specific provisions and value adjustments. 7 Refer to Master Circular - Basel III Capital Regulation, as amended from time to time",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-lef:2019:4",
+      "clause_path": "Annex > 4",
+      "quote": "4. Definition of a large exposure and regulatory reporting 4.1. Under the LEF, the sum of all exposure values of a bank (measured as specified in paragraphs 7, 8, 9 and 10 of this framework) to a counterparty or a group of connected counterparties (as defined in paragraph 6 below) is defined as a 'Large Exposure(LE)', if it is equal to or above 10 percent of the bank's eligible capital base (i.e., Tier 1 capital as specified in paragraph 5.3 below). 4.2. Banks shall report their Large Exposures to the Reserve Bank of India (RBI), Department of Banking Supervision, Central Office, (DBS, CO), as per the reporting template given in Appendix 1. The reporting, inter-alia, will include the following: (ii) all other exposures, measured as specified in paragraphs 7, 8, 9 and 10 of this framework without the effect of credit risk mitigation (CRM), with values equal to or above 10 percent of the bank's eligible capital base; (i) all exposures, measured as specified in paragraphs 7, 8, 9 and 10 of this framework, with values equal to or above 10 percent of the bank's eligible capital (i.e., meeting the definition of a large exposure as per para 4.1 above); Withdrawn (iii) all the exempted exposures (except intraday inter-bank exposures) with values equal to or above 10 percent of the bank's eligible capital base; (iv) 20 largest exposures included in the scope of application, irrespective of the values of these exposures relative to the bank's eligible capital base.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-lef:2019:7.16+7.17",
+      "clause_path": "Annex > 7.VI Calculation of exposure value for Trading Book positions > 7.16 + 7.17",
+      "quote": "7.16 The exposure value of straight debt instruments and equities will be equal to the market value of the exposure 12 . 7.17 Instruments such as swaps, futures, forwards and credit derivatives 13 must be converted into positions following the risk-based capital requirements 14 . These instruments should be decomposed into their individual legs. Only transaction legs representing a bank's exposures to the counterparty within the scope of the large exposures framework should be considered 15 for calculating a bank's total exposure to that counterparty.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-lef:2019:5.3",
+      "clause_path": "Annex > 5 > 5.3",
+      "quote": "5.3 The eligible capital base for this purpose is the effective amount of Tier 1 capital fulfilling the criteria defined in the Master Circular on Basel III - Capital Regulation dated July 1, 2015 (as amended from time to time) as per the last audited balance sheet. However, the infusion of capital under Tier I after the published balance sheet date may also be taken into account for the purpose of Large Exposures Framework. Banks shall obtain an external auditor's certificate on completion of the augmentation of capital and submit the same to the Reserve Bank of India (Department of Banking Supervision) before reckoning the additions to capital funds. Further, for Indian Banks, profits accrued during the year, subject to provisions contained in para 4.2.3.1 (vii) of Master Circular on Basel III - Capital Regulation dated July 01, 2015 (as amended from time to time), will also be reckoned as Tier I capital for the purpose of Large Exposures Framework",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-lef:2019:3.3+3.4",
+      "clause_path": "Annex > 3 > 3.3 + 3.4",
+      "quote": "3.3 However, a bank's exposure to an exempted entity which is hedged by a credit derivative shall be treated as an exposure to the counterparty providing the credit protection notwithstanding the fact that the original exposure is exempted. 3.4 All exempted exposures must be reported by a bank as required under regulatory reporting specified in paragraph 4.2 below, if these exposures meet the criteria for definition of a 'Large Exposure' as per para 4.1 below.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-lef:2019:10.10+10.11",
+      "clause_path": "Collective Investment Undertakings (CIUs), securitisation vehicles and other structures - adoption of 'Look Through Approach' (LTA) > 10.III Large exposures rules for global systemically important banks (G-SIBs) and domestic systemically important banks (D-SIBs) > 10.10 + 10.11",
+      "quote": "10.10 The LE limit applied to a G-SIB's exposure to another G-SIB is set at 15 percent of the eligible capital base. 10.11 The LE limit of a non G-SIB in India to a G-SIB in India or overseas will be 20 percent of the eligible capital base.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "rbi-lef:2019:10.12",
+      "clause_path": "Collective Investment Undertakings (CIUs), securitisation vehicles and other structures - adoption of 'Look Through Approach' (LTA) > 10.III Large exposures rules for global systemically important banks (G-SIBs) and domestic systemically important banks (D-SIBs) > 10.12",
+      "quote": "10.12 For above paragraphs, the limit applies to G-SIBs as identified by the Basel Committee and published annually by the FSB. When a bank becomes a G-SIB, it must apply the 15 percent exposure limit to another G-SIB within 12 months from the 22 If equity stakes in a CCP are deducted from the capital on which the large exposure limit is based, these must not be included as exposure to the CCP. 23 As contained in Master Circular - Exposure Norms/ Master Circular - Bank finance to NBFCs date of becoming G-SIB, which is the same time frame within which a bank that has become a G-SIB would need to satisfy its higher loss absorbency capital requirement. Similarly, when a counterparty bank becomes G-SIB, banks may apply limits as indicated in para 10.10 or 10.11, as applicable, within 12 months from the date of counterparty bank becoming G-SIB. For the purpose of computing exposure limits under LEF, Indian branches of foreign G-SIBs will not be considered as GSIBs. Accordingly, for Indian branches of foreign G-SIBs, exposure limit on a G-SIB, including their head office 24 , will be 20% of eligible capital base and exposure limit on any other bank (i.e. not G-SIB) will be 25% of eligible capital base. Similarly, for Indian branches of foreign non-GSIBs, exposure limit on a non-GSIB, including their head office 24 , will be 25% of eligible capital base and exposure limit on a G-SIB will be 20% of eligible capital base.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "basel3-d424:2017:41:ff7f488a2a5d",
+      "clause_path": "Exposure measure > (b) Derivative exposures > 41",
+      "quote": "41. Treatment of clearing services : where a bank acting as clearing member (CM) 19 offers clearing services to clients, the CM's trade exposures to the central counterparty (CCP) that arise when the CM is obligated to reimburse the client for any losses suffered due to changes in the value of its transactions in the event that the CCP defaults must be captured by applying the same treatment that appli es to any other type of derivative transaction. However, if the CM, based on the contractual arrangements with the client, is not obligated to reimburse the client for any losses suffered in the event that a QCCP defaults, the CM need not recognise the res ulting trade exposures to the QCCP in the leverage ratio exposure measure. In addition, where a bank provides clearing services as a 'higher level client' within a multi-level client structure, 20 the bank need not recognise in its leverage ratio exposure measure the resulting trade exposures to the CM or to an entity that serves as a higher level client to the bank in the leverage ratio exposure measure if it meets all of the following conditions: The offsetting transactions are identified by the QCCP as higher level client transactions and collateral to support them is held by the QCCP and/or the CM, as applicable, under arrangements that prevent any losses to the higher level client due to: (i) the default or insolvency of the CM, (ii) the default or insolvency of the CM's other clients, and (iii) the joint default or insolvency of the CM and any of its other clients; 21 The bank must have conducted a sufficient legal review (and undertake such further review as necessary to ensure continuing enforceability) a nd have a well- founded basis to conclude that, in the event of legal challenge, the relevant courts and administrative authorities would find that such arrangements mentioned above would be legal, valid, binding and enforceable under relevant laws of the relevant jurisdiction(s); Relevant laws, regulation, rules, contractual or administrative arrangements provide that the offsetting transactions with the defaulted or insolvent CM are highly likely to continue to be indirectly transacted through the QCCP, or by the QCCP, if the CM defaults or becomes insolvent. 22 In such circumstances, the higher level client positions and collateral with the QCCP will be transferred at market value unless the higher level client requests to close out the position at market value; and 19 For the purposes of this paragraph, the terms 'clearing member', 'trade exposure', 'central counterparty' and 'qualifying central counterparty' are defined as in Annex 4, Section I, A. General Terms of the Basel II framework as amended. 20 A multi-level client structure is one in which banks can centrally clear as indirect clients; that is, when clearing services are provided to the ba nk by an institution which is not a direct clearing member, but is itself a client of a clearing member or another clearing client. The term 'higher level client' refers to the institution that provides clearing services. 21 That is, upon the insolvency of the clearing member, there is no legal impediment (other than the need to obtain a court order to which the client is entitled) to the transfer of the collateral belonging to clients of a defaulting clearing member to th e QCCP, to one of more other surviving clearing members or to the client or the client's nominee. 22 If there is a clear precedent for transactions being ported at a QCCP and industry intent for this practice to continue, then these factors must be considered when assessing if trades are highly likely to be ported. The fact that QCCP documentation does not prohibit client trades from being ported is not sufficient to say they are highly likely to be ported. The bank is not obligated to reimburse its client for any losses suffered in the event of default of either the CM or the QCCP.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "basel3-d424:2017:55:9bec13dad199",
+      "clause_path": "Exposure measure > (c) Securities financing transaction exposures > 55",
+      "quote": "55. A bank acting as agent in an SFT and providing an indemnity or guarantee to a customer or counterparty will be considered eligible for the exceptional treatment set out in paragraph 54 only if the bank's exposure to the transaction is limited to the guaranteed difference between the value of the security or cash its customer has lent and the value of the collateral the borrower has provided. In situations where the bank is further economically exposed (ie beyond the guarantee for the difference) to the underlying security or cash in the transaction, 34 a further exposure equal to the full amount of the security or cash must be included in the leverage ratio exposure measure.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "basel3-d424:2017:42:12de41b50d42",
+      "clause_path": "Exposure measure > (b) Derivative exposures > 42",
+      "quote": "42. Where a client enters directly into a derivative transaction with the CCP and the CM guarantees the performance of its client's derivative trade exposures to the CCP, the bank acting as the CM for the client to the CCP must calculate its related leverage ratio exposure resulting from the guarantee as a derivative exposure as set out in paragraphs 33 to 40, as if it had entered directly into the transaction with the client, including with regard to the receipt or provision of cash variation margin.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "basel3-d424:2017:134:56f12eb50b29",
+      "clause_path": "· T =min {five years, residual maturity of the exposure expressed in years} > 2 > (i) Collateralised transactions > 134",
+      "quote": "134. For collateralised OTC transactions, exchange traded derivatives and long transactions, banks may use the standardised approach for counterparty credit risk ( SA-CCR) or the Internal Model Method to calculate the exposure amount, in accordance with paragraph 189. 67 See Annex 10 of Basel II (June 2006) for an overview of methodologies for the capital treatment of transacti ons secured by financial collateral under the standardised and IRB approaches. 68 Alternatively, banks with appropriate supervisory approval may instead use the Internal Model Method to determine the exposure amount, taking into account collateral. capital",
+      "support": 1.0
+    },
+    {
+      "clause_id": "basel3-d424:2017:106:28c76d081d1c",
+      "clause_path": "where: > 88 > (iii) Exposure at default (EAD) > Exposure measurement for transactions that expose banks to counterparty credit risk > 106",
+      "quote": "106. Measures of exposure for SFTs and OTC derivatives that expose banks to counterparty credit risk under the IRB approach will be calculated as per the rules set forth in the counterparty credit risk standards .",
+      "support": 1.0
+    },
+    {
+      "clause_id": "basel3-d424:2017:34:84cf3c82762c",
+      "clause_path": "Exposure measure > (b) Derivative exposures > 34",
+      "quote": "34. For derivative transactions not covered by an eligible bilateral netting contract as specified in paragraphs 4 and 5 of the Annex, the amount to be included in the leverage ratio exposure measure is determined, for each transaction separately, as follows: exposure measure = alpha * (RC + PFE) where alpha = 1.4; RC = the replacement cost calculated according to paragraph 2 of the Annex; and PFE = an amount for PFE calculated according to paragraph 3 of the Annex.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "basel3-d424:2017:38+39:3f644f6d09a1",
+      "clause_path": "Exposure measure > (b) Derivative exposures > 38 + 39",
+      "quote": "38. Similarly, with regard to collateral provided , banks must gross up their leverage ratio exposure measure by the amount of any derivatives collateral provided where the provision of that collateral has reduced the value of their balance sheet assets under their operative accounting framework. 39. Treatment of cash variation margin : in the treatment of derivative exposures for the purpose of the leverage ratio exposure measure, the cash portion of variation margin exchanged counterparties may be viewed as a form of pre-settlement payment if the following conditions are met: between (i) For trades not cleared through a qualifying central counterparty (QCCP) 16 the cash received by the recipient counterparty is not segregated. Cash variation margin would satisfy the non -segregation criterion if the recipient counterparty has no restrictions by law, regulation, or any agreement with the counterparty on the ability to use the cash received (ie the cash variation margin received is used as its own cash). (ii) Variation margin is calculated and exchanged on at least a daily basis based on mark- to-market valuation of derivative positions. To meet this criterion, derivative positions must be valued daily and cash variation margin must be transferred at least daily to the counterparty or to counterparty's account, as appropriate. Cash variation margin exchanged on the morning of the subsequent trading day based on the previous, end -of-day market values would meet this criterion. (iii) The variation margin is received in a currency specified in the derivative cont ract, governing master netting agreement (MNA), credit support annex (CSA) to the qualifying MNA or as defined by any netting agreement with a CCP. (iv) Variation margin exchanged is the full amount that would be necessary to extinguish the mark to-market exposure of the derivative subject to the threshold and minimum transfer amounts applicable to the counterparty. 17 this (v) Derivative transactions and variation margins are covered by a single MNA between the legal entities that are the counterparties in the derivative transaction. The MNA must explicitly stipulate that the counterparties agree to settle net any payment obligations covered by such a netting agreement, taking into account any variation margin received or provided if a credit event occurs involving either counterparty. The MNA must be legally enforceable and effective (ie it satisfies the conditions in paragraph 4 (c) and paragraph 5 of the Annex) in all relevant jurisdictions, including in the event of default and bankruptcy or insolvency. For the purposes of paragraph, the term 'MNA' includes any netting agreement that provides legally enforceable rights of offset 18 and a Master MNA may be deemed to be a single MNA.",
+      "support": 1.0
+    },
+    {
+      "clause_id": "basel3-d424:2017:6+7:ff0e5a689b1d",
+      "clause_path": "A. General provisions > 6 + 7",
+      "quote": "6. Banks that have received approval of their supervisory authority to use the SA -CVA may carve out from the SA-CVA calculations any number of netting sets. CVA capital for all carved out netting sets must be calculated via the BA-CVA. 7. A materiality threshold is established. Any bank whose aggregate notional amount of noncentrally cleared derivatives is less than or equal to 100 billion euro is deemed as being below the materiality threshold. Any bank below the materiality threshold may choose to set its CVA capital equal to 100% of the bank's capital requirement for counterparty credit risk (CCR). CVA hedges are not recognised under this treatment. If chosen, this treatment must be applied to the bank's entire portfolio instead of the BA-CVA or the SA-CVA. A bank's relevant supervisory authority, however, can remove this option if it determines that CVA risk resulting from the bank's derivative positions materially contributes to the bank's overall risk.",
+      "support": 1.0
+    }
+  ],
+  "unresolved_questions": [],
+  "model_version": "deterministic-assessment-v1",
+  "prompt_version": "source-actions-v1"
+}

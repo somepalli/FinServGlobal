@@ -154,6 +154,10 @@ class TransactionPayload(BaseModel):
     jurisdictions: list[Literal["IN", "EU", "US", "GLOBAL"]] | None = None
     instrument: str | None = None
     kyc_status: bool | None = None
+    high_risk_jurisdiction: bool | None = None
+    large_exposure_threshold_exceeded: bool | None = None
+    appropriateness_assessed: bool | None = None
+    priority_sector_reporting_required: bool | None = None
 
 
 class TransactionFacts(BaseModel):
@@ -165,6 +169,10 @@ class TransactionFacts(BaseModel):
     instrument: str | None
     kyc_status: bool | None
     missing_fields: list[str]
+    high_risk_jurisdiction: bool | None = None
+    large_exposure_threshold_exceeded: bool | None = None
+    appropriateness_assessed: bool | None = None
+    priority_sector_reporting_required: bool | None = None
 
 
 class FrameworkTarget(BaseModel):
@@ -180,6 +188,7 @@ class RetrievalRequest(BaseModel):
     query: str
     framework: str
     jurisdiction: Literal["IN", "EU", "US", "GLOBAL"]
+    top_k: int = Field(gt=0)
 
 
 class FrameworkRetrieval(BaseModel):
@@ -196,6 +205,12 @@ class CrossReference(BaseModel):
 class CitationValidation(BaseModel):
     valid: bool
     problems: list[str]
+
+
+class SampleAssessment(BaseModel):
+    name: str
+    expected_doc_id: str
+    assessment: ComplianceAssessment
 
 
 class DependencyStatus(BaseModel):

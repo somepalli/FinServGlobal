@@ -1,0 +1,10 @@
+{
+  "txn_id": "sample-complex-product",
+  "amount": "25000.00",
+  "currency": "EUR",
+  "counterparty_type": "retail investor without an appropriateness assessment",
+  "jurisdictions": ["EU"],
+  "instrument": "complex retail investment product",
+  "kyc_status": true,
+  "appropriateness_assessed": false
+}

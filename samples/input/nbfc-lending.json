@@ -1,0 +1,10 @@
+{
+  "txn_id": "sample-nbfc-lending",
+  "amount": "50000000.00",
+  "currency": "INR",
+  "counterparty_type": "non-banking financial company",
+  "jurisdictions": ["IN"],
+  "instrument": "NBFC lending requiring priority sector reporting",
+  "kyc_status": true,
+  "priority_sector_reporting_required": true
+}
