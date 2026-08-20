@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     embedding_max_length: int = Field(default=8192, gt=0)
     embedding_use_fp16: bool = False
     reranker_model: str = "BAAI/bge-reranker-v2-m3"
+    reranker_batch_size: int = Field(default=16, gt=0)
+    reranker_max_length: int = Field(default=1024, gt=0)
+    reranker_use_fp16: bool = False
 
     # Retrieve wide, rerank narrow. The reranker is the expensive step, so the
     # first number is what we can afford to pay the vector store for and the
@@ -45,6 +48,8 @@ class Settings(BaseSettings):
 
     llm_base_url: str = "http://localhost:11434/v1"
     llm_model: str = "qwen2.5:7b-instruct"
+    llm_timeout_seconds: float = Field(default=120.0, gt=0)
+    llm_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
 
     @property
     def is_local(self) -> bool:
