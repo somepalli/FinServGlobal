@@ -1,0 +1,28 @@
+image:
+  repository: ""          # set by CI to the ECR digest, never a tag
+  digest: ""
+
+api:
+  replicas: 2
+  resources:
+    requests: { cpu: 500m, memory: 1Gi }
+    limits: { cpu: 2, memory: 4Gi }
+
+vllm:
+  enabled: true
+  model: Qwen/Qwen2.5-7B-Instruct-AWQ
+  nodeSelector: { workload: inference }
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  resources:
+    limits: { nvidia.com/gpu: 1 }
+
+qdrant:
+  persistence:
+    size: 20Gi
+    storageClass: gp3
+
+postgres:
+  external: true          # RDS. See deploy/README.md for the demo tradeoff.

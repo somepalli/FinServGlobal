@@ -1,0 +1,39 @@
+# The corpus is deliberately small and deliberately chosen: every sample
+# transaction in the assignment maps to at least one document here, so
+# retrieval accuracy can be checked against a known answer rather than eyeballed.
+
+documents:
+  - doc_id: rbi-kyc-md
+    framework: RBI
+    jurisdiction: IN
+    title: Master Direction - Know Your Customer
+    version: "2016-amended"
+    covers: [cross-border-payment, non-kyc-counterparty]
+
+  - doc_id: rbi-lef
+    framework: RBI
+    jurisdiction: IN
+    title: Large Exposures Framework
+    version: "2019"
+    covers: [intra-group-derivative, large-exposure]
+
+  - doc_id: rbi-psl
+    framework: RBI
+    jurisdiction: IN
+    title: Master Direction - Priority Sector Lending
+    version: "2020-amended"
+    covers: [nbfc-lending, priority-sector-reporting]
+
+  - doc_id: mifid2-dir
+    framework: MiFID II
+    jurisdiction: EU
+    title: Directive 2014/65/EU
+    version: "2014"
+    covers: [appropriateness-assessment, complex-product]
+
+  - doc_id: basel3-d424
+    framework: Basel III
+    jurisdiction: GLOBAL
+    title: Basel III - Finalising post-crisis reforms (d424)
+    version: "2017"
+    covers: [tier-1-capital, capital-adequacy]

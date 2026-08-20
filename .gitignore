@@ -1,0 +1,23 @@
+.venv/
+.uv-cache/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.coverage
+.mypy_cache/
+.ruff_cache/
+node_modules/
+.next/
+*.tsbuildinfo
+data/corpus/*.pdf
+data/qdrant/
+data/pg/
+sbom.json
+.env
+.env.local
+
+# local agent instructions
+AGENTS.md
+*.tfstate
+*.tfstate.backup
+.terraform/

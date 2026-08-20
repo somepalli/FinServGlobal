@@ -1,0 +1,36 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: apply or destroy
+        required: true
+        default: apply
+        type: choice
+        options: [apply, destroy]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deploy/tofu
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-south-1
+      - uses: opentofu/setup-opentofu@v1
+      - run: tofu init
+      - run: tofu fmt -check
+      - run: tofu validate
+      - if: inputs.action == 'apply'
+        run: tofu apply -auto-approve
+      - if: inputs.action == 'destroy'
+        run: tofu destroy -auto-approve
