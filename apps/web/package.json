@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "generate:api-types": "openapi-typescript openapi.json -o lib/api-schema.ts",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit"
@@ -23,6 +24,7 @@
     "eslint": "9.39.5",
     "eslint-config-next": "15.5.23",
     "eslint-plugin-security": "3.0.1",
+    "openapi-typescript": "7.13.0",
     "typescript": "5.7.2"
   }
 }

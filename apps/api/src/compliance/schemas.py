@@ -111,6 +111,8 @@ class Citation(BaseModel):
     clause_path: str
     quote: str
     support: float = Field(ge=0.0, le=1.0)
+    effective_from: date | None = None
+    effective_to: date | None = None
 
 
 class Answer(BaseModel):

@@ -144,6 +144,8 @@ async def _citation_for_sentence(
         clause_path=item.clause.clause_path,
         quote=quote,
         support=scores[best_index],
+        effective_from=item.clause.effective_from,
+        effective_to=item.clause.effective_to,
     )
 
 
@@ -155,6 +157,8 @@ def _fallback(clauses: Sequence[RetrievedClause], as_of: date) -> Answer:
             clause_path=item.clause.clause_path,
             quote=item.clause.text,
             support=1.0,
+            effective_from=item.clause.effective_from,
+            effective_to=item.clause.effective_to,
         )
         for item in clauses
     ]

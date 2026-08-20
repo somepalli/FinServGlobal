@@ -163,6 +163,8 @@ def _citations(retrievals: list[FrameworkRetrieval], narrowed: bool) -> list[Cit
             clause_path=item.clause.clause_path,
             quote=item.clause.text,
             support=1.0,
+            effective_from=item.clause.effective_from,
+            effective_to=item.clause.effective_to,
         )
         for item in selected
     ]

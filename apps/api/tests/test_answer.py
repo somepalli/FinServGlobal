@@ -72,6 +72,8 @@ async def test_citation_quote_is_a_verbatim_source_span() -> None:
     assert answer.text == generated
     assert answer.citations
     assert all(citation.quote in source.clause.text for citation in answer.citations)
+    assert answer.citations[0].effective_from == source.clause.effective_from
+    assert answer.citations[0].effective_to == source.clause.effective_to
 
 
 @pytest.mark.asyncio
@@ -90,6 +92,7 @@ async def test_unanswerable_question_returns_raw_clauses() -> None:
     assert "Martian" not in answer.text
     assert source.clause.text in answer.text
     assert answer.citations[0].quote == source.clause.text
+    assert answer.citations[0].effective_from == source.clause.effective_from
 
 
 def test_external_llm_endpoint_is_rejected() -> None:
