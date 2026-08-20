@@ -64,6 +64,11 @@ class QueryEmbedding(BaseModel):
         return self
 
 
+class TextPair(BaseModel):
+    query: str = Field(min_length=1)
+    passage: str = Field(min_length=1)
+
+
 class CorpusDocument(BaseModel):
     doc_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$")
     framework: str
