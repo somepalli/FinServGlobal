@@ -22,10 +22,15 @@ class Settings(BaseSettings):
 
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "regulations"
+    qdrant_dense_size: int = Field(default=1024, gt=0)
+    qdrant_upsert_batch_size: int = Field(default=64, gt=0)
 
     database_url: PostgresDsn
 
     embedding_model: str = "BAAI/bge-m3"
+    embedding_batch_size: int = Field(default=16, gt=0)
+    embedding_max_length: int = Field(default=8192, gt=0)
+    embedding_use_fp16: bool = False
     reranker_model: str = "BAAI/bge-reranker-v2-m3"
 
     # Retrieve wide, rerank narrow. The reranker is the expensive step, so the

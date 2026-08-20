@@ -28,20 +28,26 @@ class _AsyncContext(Protocol[_ContextValue]):
     ) -> bool | None: ...
 
 
-class _MigrationRow(Protocol):
-    def __getitem__(self, key: str) -> str: ...
+class DatabaseRow(Protocol):
+    def __getitem__(self, key: str) -> object: ...
 
 
-class _Connection(Protocol):
+class DatabaseConnection(Protocol):
     async def execute(self, query: str, *args: object) -> str: ...
 
-    async def fetch(self, query: str, *args: object) -> list[_MigrationRow]: ...
+    async def executemany(self, query: str, args: list[tuple[object, ...]]) -> None: ...
+
+    async def fetch(self, query: str, *args: object) -> list[DatabaseRow]: ...
+
+    async def fetchrow(self, query: str, *args: object) -> DatabaseRow | None: ...
+
+    async def fetchval(self, query: str, *args: object) -> object: ...
 
     def transaction(self) -> _AsyncContext[None]: ...
 
 
 class DatabasePool(Protocol):
-    def acquire(self) -> _AsyncContext[_Connection]: ...
+    def acquire(self) -> _AsyncContext[DatabaseConnection]: ...
 
     async def close(self) -> None: ...
 
@@ -66,9 +72,7 @@ async def create_pool(
     return cast(DatabasePool, pool)
 
 
-async def apply_migrations(
-    pool: DatabasePool, migrations_dir: Path | None = None
-) -> list[str]:
+async def apply_migrations(pool: DatabasePool, migrations_dir: Path | None = None) -> list[str]:
     migration_files = _migration_files(migrations_dir or _default_migrations_dir())
     applied_now: list[str] = []
     async with pool.acquire() as connection:
@@ -76,7 +80,7 @@ async def apply_migrations(
         async with connection.transaction():
             await connection.execute("LOCK TABLE schema_migrations IN EXCLUSIVE MODE")
             rows = await connection.fetch("SELECT name FROM schema_migrations")
-            applied = {row["name"] for row in rows}
+            applied = {cast(str, row["name"]) for row in rows}
             for migration_file in migration_files:
                 if migration_file.name in applied:
                     continue

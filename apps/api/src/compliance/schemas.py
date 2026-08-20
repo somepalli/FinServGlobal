@@ -2,7 +2,7 @@ from datetime import date
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl, model_validator
 
 
 class Clause(BaseModel):
@@ -37,6 +37,48 @@ class ParsedDocument(BaseModel):
     title: str = Field(min_length=1)
     content: list[str] = Field(default_factory=list)
     children: list[DocumentNode] = Field(default_factory=list)
+
+
+class ClauseEmbedding(BaseModel):
+    clause_id: str
+    dense: list[float] = Field(min_length=1)
+    sparse_indices: list[int]
+    sparse_values: list[float]
+
+    @model_validator(mode="after")
+    def sparse_components_align(self) -> "ClauseEmbedding":
+        if len(self.sparse_indices) != len(self.sparse_values):
+            raise ValueError("sparse indices and values must have equal lengths")
+        return self
+
+
+class CorpusDocument(BaseModel):
+    doc_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$")
+    framework: str
+    jurisdiction: Literal["IN", "EU", "US", "GLOBAL"]
+    title: str
+    version: str
+    effective_from: date
+    effective_to: date | None = None
+    source_url: HttpUrl
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    covers: list[str] = Field(default_factory=list)
+
+
+class CorpusManifest(BaseModel):
+    documents: list[CorpusDocument] = Field(min_length=1)
+
+
+class IngestionResult(BaseModel):
+    documents: int
+    clauses_persisted: int
+    clauses_indexed: int
+    clauses_skipped: int
+
+
+class PersistedVersion(BaseModel):
+    version_id: str
+    predecessor_version: str | None = None
 
 
 class RetrievedClause(BaseModel):
