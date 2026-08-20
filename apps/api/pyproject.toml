@@ -1,6 +1,7 @@
 [project]
 name = "compliance"
 version = "0.1.0"
+authors = [{ name = "somepalli", email = "105231+somepalli@users.noreply.github.com" }]
 requires-python = ">=3.12"
 dependencies = [
     "asyncpg>=0.30.0",
@@ -16,6 +17,7 @@ dependencies = [
     "structlog>=24.4",
     "opentelemetry-sdk>=1.28",
     "opentelemetry-instrumentation-fastapi>=0.49b0",
+    "PyYAML>=6.0",
 ]
 
 [dependency-groups]
@@ -27,7 +29,7 @@ dev = [
     "mypy>=1.13",
     "bandit>=1.8",
     "pip-audit>=2.7",
-    "ragas>=0.2",
+    "pip-licenses>=5.0",
 ]
 
 [build-system]

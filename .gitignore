@@ -7,8 +7,10 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 node_modules/
+.pnpm-store/
 .next/
 *.tsbuildinfo
+next-env.d.ts
 data/corpus/*.pdf
 data/qdrant/
 data/pg/
