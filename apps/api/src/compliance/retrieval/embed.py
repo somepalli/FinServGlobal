@@ -6,7 +6,7 @@ from typing import Protocol, TypedDict, cast
 
 from compliance.config.settings import Settings
 from compliance.ingest.chunk import embedding_text
-from compliance.schemas import Clause, ClauseEmbedding
+from compliance.schemas import Clause, ClauseEmbedding, QueryEmbedding
 
 
 class EmbeddingError(RuntimeError):
@@ -69,21 +69,36 @@ class BgeM3Embedder:
     def embed(self, clauses: list[Clause]) -> list[ClauseEmbedding]:
         if not clauses:
             return []
-        raw = self._active_model().encode(
-            [embedding_text(clause) for clause in clauses],
-            batch_size=self._settings.embedding_batch_size,
-            max_length=self._settings.embedding_max_length,
-            return_dense=True,
-            return_sparse=True,
-            return_colbert_vecs=False,
-        )
-        _validate_count(raw, len(clauses))
+        raw = self._encode([embedding_text(clause) for clause in clauses])
         return [
             self._build_embedding(clause, dense, sparse)
             for clause, dense, sparse in zip(
                 clauses, raw["dense_vecs"], raw["lexical_weights"], strict=True
             )
         ]
+
+    def embed_query(self, query: str) -> QueryEmbedding:
+        if not query.strip():
+            raise EmbeddingError("query cannot be empty")
+        raw = self._encode([query])
+        indices, values = _sparse_parts(raw["lexical_weights"][0])
+        return QueryEmbedding(
+            dense=[float(value) for value in raw["dense_vecs"][0]],
+            sparse_indices=indices,
+            sparse_values=values,
+        )
+
+    def _encode(self, texts: list[str]) -> _RawEmbedding:
+        raw = self._active_model().encode(
+            texts,
+            batch_size=self._settings.embedding_batch_size,
+            max_length=self._settings.embedding_max_length,
+            return_dense=True,
+            return_sparse=True,
+            return_colbert_vecs=False,
+        )
+        _validate_count(raw, len(texts))
+        return raw
 
     def _build_embedding(
         self,

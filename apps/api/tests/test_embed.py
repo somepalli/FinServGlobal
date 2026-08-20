@@ -64,3 +64,17 @@ def test_empty_batch_does_not_load_the_model() -> None:
     settings = Settings(database_url="postgresql://u:p@localhost/db")
 
     assert BgeM3Embedder(settings).embed([]) == []
+
+
+def test_query_embedding_uses_query_text_without_clause_breadcrumb() -> None:
+    settings = Settings(
+        database_url="postgresql://u:p@localhost/db",
+        embedding_batch_size=2,
+        embedding_max_length=128,
+    )
+    model = _FakeBgeModel()
+
+    result = BgeM3Embedder(settings, model=model).embed_query("3.1.2")
+
+    assert model.sentences == ["3.1.2"]
+    assert result.sparse_indices == [2, 7]
