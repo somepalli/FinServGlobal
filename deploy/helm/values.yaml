@@ -1,15 +1,47 @@
-image:
-  repository: ""          # set by CI to the ECR digest, never a tag
-  digest: ""
+nameOverride: ""
+fullnameOverride: ""
+imagePullSecrets: []
 
 api:
   replicas: 2
+  image:
+    repository: 000000000000.dkr.ecr.ap-south-1.amazonaws.com/compliance-api
+    digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+  serviceAccount:
+    annotations: {}
+  podAnnotations: {}
   resources:
     requests: { cpu: 500m, memory: 1Gi }
-    limits: { cpu: 2, memory: 4Gi }
+    limits: { cpu: "2", memory: 4Gi }
+
+web:
+  replicas: 2
+  image:
+    repository: 000000000000.dkr.ecr.ap-south-1.amazonaws.com/compliance-web
+    digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+  serviceAccount:
+    annotations: {}
+  podAnnotations: {}
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+qdrant:
+  image:
+    repository: docker.io/qdrant/qdrant
+    digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+  resources:
+    requests: { cpu: 500m, memory: 1Gi }
+    limits: { cpu: "2", memory: 4Gi }
+  persistence:
+    size: 20Gi
+    storageClass: gp3
 
 vllm:
   enabled: true
+  image:
+    repository: docker.io/vllm/vllm-openai
+    digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
   model: Qwen/Qwen2.5-7B-Instruct-AWQ
   nodeSelector: { workload: inference }
   tolerations:
@@ -17,12 +49,29 @@ vllm:
       operator: Exists
       effect: NoSchedule
   resources:
-    limits: { nvidia.com/gpu: 1 }
-
-qdrant:
-  persistence:
-    size: 20Gi
-    storageClass: gp3
+    requests: { cpu: "2", memory: 8Gi }
+    limits: { cpu: "4", memory: 16Gi, nvidia.com/gpu: 1 }
 
 postgres:
-  external: true          # RDS. See deploy/README.md for the demo tradeoff.
+  existingSecret: compliance-runtime
+  databaseUrlKey: database-url
+  egressCidr: 10.0.0.10/32
+
+ingestion:
+  enabled: true
+  backoffLimit: 1
+  resources:
+    requests: { cpu: "1", memory: 2Gi }
+    limits: { cpu: "4", memory: 8Gi }
+
+ingress:
+  enabled: true
+  className: alb
+  scheme: internal
+  webHost: compliance.example.com
+  apiHost: api.compliance.example.com
+  annotations:
+    alb.ingress.kubernetes.io/target-type: ip
+
+networkPolicy:
+  enabled: true

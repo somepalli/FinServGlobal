@@ -63,6 +63,16 @@ jobs:
       - run: pnpm audit --audit-level=high
       - run: pnpm build
 
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.18.6
+      - run: helm lint deploy/helm --strict
+      - run: helm template deploy/helm > /tmp/compliance-rendered.yaml
+
   supply-chain:
     runs-on: ubuntu-latest
     steps:
@@ -81,7 +91,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   image:
-    needs: [python, python-security, web, supply-chain]
+    needs: [python, python-security, web, helm, supply-chain]
     if: github.ref == 'refs/heads/main' && vars.ENABLE_IMAGE_PUBLISH == 'true'
     runs-on: ubuntu-latest
     permissions:

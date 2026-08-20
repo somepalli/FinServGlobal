@@ -1,0 +1,49 @@
+{{- if .Values.ingestion.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "compliance.fullname" . }}-ingestion
+  labels:
+    {{- include "compliance.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingestion
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: {{ .Values.ingestion.backoffLimit }}
+  template:
+    metadata:
+      labels:
+        {{- include "compliance.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ingestion
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "compliance.apiServiceAccount" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: ingestion
+          image: {{ include "compliance.image" .Values.api.image | quote }}
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "compliance.ingest.run"]
+          args: ["--resume"]
+          env:
+            - name: COMPLIANCE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.existingSecret }}
+                  key: {{ .Values.postgres.databaseUrlKey }}
+            - name: COMPLIANCE_QDRANT_URL
+              value: http://{{ include "compliance.fullname" . }}-qdrant:6333
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          resources:
+            {{- toYaml .Values.ingestion.resources | nindent 12 }}
+{{- end }}

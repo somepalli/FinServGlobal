@@ -1,0 +1,44 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "compliance.fullname" . }}-api-egress
+  labels:
+    {{- include "compliance.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "compliance.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "compliance.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: qdrant
+      ports:
+        - { protocol: TCP, port: 6333 }
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "compliance.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: vllm
+      ports:
+        - { protocol: TCP, port: 8000 }
+    - to:
+        - ipBlock:
+            cidr: {{ .Values.postgres.egressCidr }}
+      ports:
+        - { protocol: TCP, port: 5432 }
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+{{- end }}
