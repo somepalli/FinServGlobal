@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     qdrant_upsert_batch_size: int = Field(default=64, gt=0)
 
     database_url: PostgresDsn
+    database_pool_min_size: int = Field(default=0, ge=0)
+    database_pool_max_size: int = Field(default=10, gt=0)
 
     embedding_model: str = "BAAI/bge-m3"
     embedding_batch_size: int = Field(default=16, gt=0)
