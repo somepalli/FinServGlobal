@@ -1,6 +1,7 @@
 [project]
 name = "finserv-compliance"
 version = "0.1.0"
+authors = [{ name = "somepalli", email = "105231+somepalli@users.noreply.github.com" }]
 requires-python = ">=3.12"
 
 [tool.uv.workspace]

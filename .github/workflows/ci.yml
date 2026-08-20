@@ -9,7 +9,8 @@ permissions:
   contents: read
 
 env:
-  UV_VERSION: "0.5.11"
+  UV_VERSION: "0.11.28"
+  PNPM_VERSION: "11.9.0"
 
 jobs:
   python:
@@ -20,10 +21,10 @@ jobs:
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
-      - run: uv sync --locked --all-extras --dev
-      - run: uv run ruff check --output-format=github .
-      - run: uv run mypy apps/api/src
-      - run: uv run pytest
+      - run: uv sync --locked --package compliance --all-groups
+      - run: uv run --package compliance ruff check --output-format=github .
+      - run: uv run --package compliance mypy apps/api/src
+      - run: uv run --package compliance pytest
 
   python-security:
     runs-on: ubuntu-latest
@@ -32,14 +33,14 @@ jobs:
       - uses: astral-sh/setup-uv@v4
         with:
           version: ${{ env.UV_VERSION }}
-      - run: uv sync --locked --dev
+      - run: uv sync --locked --package compliance --all-groups
       - name: lockfile is in sync
         run: uv lock --check
-      - run: uv run bandit -q -r apps/api/src
+      - run: uv run --package compliance bandit -q -r apps/api/src
       - name: dependency audit
         run: |
-          uv export --format requirements-txt --no-hashes -o /tmp/req.txt
-          uv run pip-audit -r /tmp/req.txt
+          uv export --locked --package compliance --no-dev --format requirements-txt --no-hashes -o /tmp/req.txt
+          uv run --package compliance pip-audit -r /tmp/req.txt
 
   web:
     runs-on: ubuntu-latest
@@ -49,6 +50,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -56,7 +59,7 @@ jobs:
           cache-dependency-path: apps/web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm lint
-      - run: pnpm exec tsc --noEmit
+      - run: pnpm typecheck
       - run: pnpm audit --audit-level=high
       - run: pnpm build
 
@@ -67,7 +70,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: osv-scanner
-        uses: google/osv-scanner-action/osv-scanner-action@v1
+        uses: google/osv-scanner-action/osv-scanner-action@v2.5.1
         with:
           scan-args: |-
             -r
@@ -79,7 +82,7 @@ jobs:
 
   image:
     needs: [python, python-security, web, supply-chain]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && vars.ENABLE_IMAGE_PUBLISH == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -125,9 +128,15 @@ jobs:
       - uses: astral-sh/setup-uv@v4
         with:
           version: ${{ env.UV_VERSION }}
-      - run: uv sync --locked --dev
+      - name: install evaluation dependencies
+        if: ${{ hashFiles('apps/api/src/compliance/eval/run.py') != '' }}
+        run: uv sync --locked --package compliance --all-groups
       - name: retrieval quality gate
+        if: ${{ hashFiles('apps/api/src/compliance/eval/run.py') != '' }}
         run: uv run python -m compliance.eval.run --suite ci --min-faithfulness 0.80
+      - name: evaluation suite pending
+        if: ${{ hashFiles('apps/api/src/compliance/eval/run.py') == '' }}
+        run: echo "Retrieval quality gate starts with Task 10."
 
   licenses:
     runs-on: ubuntu-latest
@@ -137,13 +146,15 @@ jobs:
         with:
           version: ${{ env.UV_VERSION }}
       - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: uv sync --locked --dev
+      - run: uv sync --locked --package compliance --all-groups
       - name: python licence inventory
         run: |
-          uvx pip-licenses --format=markdown --with-urls \
+          uv run --package compliance pip-licenses --format=markdown --with-urls \
             --fail-on="BUSL-1.1;SSPL-1.0;Elastic-2.0;Commons-Clause;PolyForm-Noncommercial-1.0.0" \
             > /tmp/py-licences.md
       - name: node licence inventory
