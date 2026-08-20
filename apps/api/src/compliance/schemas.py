@@ -52,6 +52,18 @@ class ClauseEmbedding(BaseModel):
         return self
 
 
+class QueryEmbedding(BaseModel):
+    dense: list[float] = Field(min_length=1)
+    sparse_indices: list[int]
+    sparse_values: list[float]
+
+    @model_validator(mode="after")
+    def sparse_components_align(self) -> "QueryEmbedding":
+        if len(self.sparse_indices) != len(self.sparse_values):
+            raise ValueError("sparse indices and values must have equal lengths")
+        return self
+
+
 class CorpusDocument(BaseModel):
     doc_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$")
     framework: str
