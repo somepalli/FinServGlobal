@@ -3,20 +3,10 @@
 import {
   queryRegulations,
   screenTransaction,
-  type Answer,
-  type ComplianceAssessment,
   type QueryRequest,
   type TransactionPayload,
 } from "./api";
-
-export type QueryState = { result: Answer | null; error: string | null };
-export type ScreenState = {
-  result: ComplianceAssessment | null;
-  error: string | null;
-};
-
-export const initialQueryState: QueryState = { result: null, error: null };
-export const initialScreenState: ScreenState = { result: null, error: null };
+import type { QueryState, ScreenState } from "./action-state";
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : "The request could not be completed";

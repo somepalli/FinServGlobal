@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
+import { useFormStatus } from "react-dom";
 
 import { CitationPanel } from "./citation-panel";
 import { SubmitButton } from "./submit-button";
-import { askQuestion, initialQueryState } from "@/lib/actions";
+import { askQuestion } from "@/lib/actions";
+import { initialQueryState } from "@/lib/action-state";
 import type { Answer } from "@/lib/api";
 
 function Markers({ count }: { count: number }) {
@@ -23,6 +25,10 @@ function QuestionForm({ action }: { action: (formData: FormData) => void }) {
   return (
     <form action={action} className="input-card">
       <label htmlFor="question">Regulatory question</label>
+      <p className="form-hint">
+        Ask about a rule or obligation. For a decision about a specific transaction,
+        use <a href="/screen">Transaction screening</a> and provide its details.
+      </p>
       <textarea id="question" name="question" rows={5} required
         placeholder="What due diligence is required for a high-risk cross-border payment?" />
       <div className="form-row">
@@ -30,7 +36,22 @@ function QuestionForm({ action }: { action: (formData: FormData) => void }) {
         <input id="as_of" name="as_of" type="date" />
         <SubmitButton idle="Check regulations" pending="Checking…" />
       </div>
+      <QueryProgress />
     </form>
+  );
+}
+
+function QueryProgress() {
+  const { pending } = useFormStatus();
+  if (!pending) return null;
+  return (
+    <div className="query-progress" role="status" aria-live="polite">
+      <span className="progress-spinner" aria-hidden="true" />
+      <div>
+        <strong>Searching and checking regulatory clauses…</strong>
+        <p>This local analysis can take a few minutes. Keep this page open.</p>
+      </div>
+    </div>
   );
 }
 
@@ -63,11 +84,19 @@ function QueryResult({ result }: { result: Answer }) {
 
 export function QuestionWorkspace() {
   const [state, action] = useActionState(askQuestion, initialQueryState);
+  const resultRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (state.error || state.result) {
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [state]);
   return (
     <section className="workspace">
       <QuestionForm action={action} />
-      {state.error ? <p className="error-banner" role="alert">{state.error}</p> : null}
-      {state.result ? <QueryResult result={state.result} /> : null}
+      <div ref={resultRef} className="result-anchor">
+        {state.error ? <p className="error-banner" role="alert">{state.error}</p> : null}
+        {state.result ? <QueryResult result={state.result} /> : null}
+      </div>
     </section>
   );
 }

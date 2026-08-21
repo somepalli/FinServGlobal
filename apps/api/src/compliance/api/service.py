@@ -75,8 +75,13 @@ class QueryService:
         self._reranker = reranker
         self._generator = generator
         self._settings = settings
+        self._query_lock = asyncio.Lock()
 
     async def answer(self, request: QueryRequest) -> Answer:
+        async with self._query_lock:
+            return await self._answer(request)
+
+    async def _answer(self, request: QueryRequest) -> Answer:
         jurisdictions = cast(list[str] | None, request.jurisdictions)
         retrieved = await self._searcher.search(
             request.question,

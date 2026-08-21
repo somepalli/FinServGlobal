@@ -8,6 +8,8 @@ export type ComplianceAssessment = components["schemas"]["ComplianceAssessment"]
 export type QueryRequest = components["schemas"]["QueryRequest"];
 export type TransactionPayload = components["schemas"]["TransactionPayload"];
 
+class ApiUnavailableError extends Error {}
+
 function endpoint(path: string): string {
   const baseUrl = process.env.API_BASE_URL;
   if (!baseUrl) {
@@ -17,12 +19,20 @@ function endpoint(path: string): string {
 }
 
 async function post<Response>(path: string, body: unknown): Promise<Response> {
-  const response = await fetch(endpoint(path), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
+  let response: globalThis.Response;
+  try {
+    response = await fetch(endpoint(path), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch (error: unknown) {
+    throw new ApiUnavailableError(
+      "Compliance API is unavailable. Start its local services and retry.",
+      { cause: error },
+    );
+  }
   if (!response.ok) {
     throw new Error(`API request failed (${response.status})`);
   }
