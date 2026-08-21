@@ -4,7 +4,8 @@ import { useActionState } from "react";
 
 import { CitationPanel } from "./citation-panel";
 import { SubmitButton } from "./submit-button";
-import { askQuestion, initialQueryState } from "@/lib/actions";
+import { askQuestion } from "@/lib/actions";
+import { initialQueryState } from "@/lib/action-state";
 import type { Answer } from "@/lib/api";
 
 function Markers({ count }: { count: number }) {

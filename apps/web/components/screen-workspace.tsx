@@ -4,7 +4,8 @@ import { useActionState } from "react";
 
 import { CitationPanel } from "./citation-panel";
 import { SubmitButton } from "./submit-button";
-import { assessTransaction, initialScreenState } from "@/lib/actions";
+import { assessTransaction } from "@/lib/actions";
+import { initialScreenState } from "@/lib/action-state";
 import type { ComplianceAssessment } from "@/lib/api";
 
 const EXAMPLE = `{

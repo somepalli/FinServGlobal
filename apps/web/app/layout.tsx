@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "FinServGlobal Compliance",
   description: "Evidence-backed regulatory queries and transaction screening.",
