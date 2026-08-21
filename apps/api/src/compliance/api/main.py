@@ -8,7 +8,7 @@ from typing import cast
 from uuid import uuid4
 
 import structlog
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from opentelemetry import trace
@@ -23,6 +23,8 @@ from compliance.config.settings import Settings, get_settings
 from compliance.db import create_pool
 from compliance.schemas import (
     Answer,
+    AuditDecision,
+    AuditEvent,
     AuditEventInput,
     ComplianceAssessment,
     DocumentInfo,
@@ -31,6 +33,7 @@ from compliance.schemas import (
     ProblemDetail,
     QueryRequest,
     ReadinessStatus,
+    ReplayComparison,
     TransactionPayload,
 )
 
@@ -160,6 +163,38 @@ def _install_read_routes(app: FastAPI) -> None:
         report_start = start or report_end - timedelta(days=6)
         return await _services(request).reports.build(report_start, report_end)
 
+    @app.get("/audit/events", response_model=list[AuditEvent])
+    async def audit_events(
+        request: Request,
+        subject_id: str | None = None,
+        limit: int = Query(default=100, ge=1, le=500),
+    ) -> list[AuditEvent]:
+        return await _services(request).audit.list_events(subject_id, limit)
+
+    @app.get("/audit/decisions/{subject_id}", response_model=AuditDecision)
+    async def audit_decision(subject_id: str, request: Request) -> AuditDecision:
+        try:
+            return await _services(request).audit.decision(subject_id)
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @app.get(
+        "/audit/decisions/{subject_id}/replay",
+        response_model=ReplayComparison,
+    )
+    async def replay_comparison(
+        subject_id: str,
+        request: Request,
+        original_event_id: int,
+        replay_event_id: int,
+    ) -> ReplayComparison:
+        try:
+            return await _services(request).audit.compare(
+                subject_id, original_event_id, replay_event_id
+            )
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
 
 def _install_action_routes(app: FastAPI) -> None:
     @app.post("/query", response_model=Answer)
@@ -194,6 +229,8 @@ def _install_action_routes(app: FastAPI) -> None:
                     "risk_rating": assessment.risk_rating.value,
                     "unresolved_questions": len(assessment.unresolved_questions),
                     "applicable_regulations": assessment.applicable_regulations,
+                    "transaction": payload.model_dump(mode="json"),
+                    "assessment": assessment.model_dump(mode="json"),
                 },
             ),
         )

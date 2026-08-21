@@ -1,7 +1,6 @@
 """Compose API workflows and persistence services."""
 
 import asyncio
-import json
 from datetime import date
 from typing import Literal, Protocol, cast
 
@@ -10,6 +9,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
 
 from compliance.agent.graph import PostgresScreeningService
+from compliance.audit import AuditRepository
 from compliance.config.settings import Settings
 from compliance.db import DatabasePool
 from compliance.reporting import LocalReportNarrator, PostureReportRepository
@@ -19,7 +19,6 @@ from compliance.retrieval.rerank import BgeReranker
 from compliance.retrieval.search import HybridSearcher
 from compliance.schemas import (
     Answer,
-    AuditEventInput,
     ComplianceAssessment,
     DependencyStatus,
     DocumentInfo,
@@ -98,25 +97,6 @@ class QueryService:
             generator=self._generator,
             scorer=self._reranker,
         )
-
-
-class AuditRepository:
-    def __init__(self, pool: DatabasePool) -> None:
-        self._pool = pool
-
-    async def write(self, event: AuditEventInput) -> None:
-        payload = json.dumps(event.payload, separators=(",", ":"))
-        async with self._pool.acquire() as connection:
-            await connection.execute(
-                """
-                INSERT INTO audit_events (actor, action, subject_id, payload)
-                VALUES ($1, $2, $3, $4::jsonb)
-                """,
-                event.actor,
-                event.action,
-                event.subject_id,
-                payload,
-            )
 
 
 class DocumentRepository:

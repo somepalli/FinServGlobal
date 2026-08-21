@@ -4,6 +4,18 @@ I keep source clauses and generated assessments inside the cluster data boundary
 server calls the API over a cluster service; the browser bundle does not embed that endpoint or
 receive direct access to regulated sources.
 
+## Audit reads and replay comparison
+
+I keep audit inspection on a Postgres-only path. Listing events, reading a recorded
+decision, and comparing replays do not initialize or call Qdrant or the LLM. This is
+intentional: evidence about an incident must remain available while the decision system
+is impaired.
+
+I treat replay divergence as an expected audit outcome, not an API failure. A later run
+may differ because its model, prompt, source corpus, or code changed. The comparison
+returns the changed fields while preserving both recorded decisions. That difference is
+the evidence an auditor needs to decide whether the earlier outcome remains defensible.
+
 ```mermaid
 flowchart LR
     Browser --> ALB[AWS load balancer]
