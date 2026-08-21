@@ -3,6 +3,7 @@
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable, MutableMapping
 from contextlib import asynccontextmanager
+from datetime import date, timedelta
 from typing import cast
 from uuid import uuid4
 
@@ -11,6 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from opentelemetry import trace
+from pydantic import JsonValue
 from qdrant_client import QdrantClient
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
@@ -25,6 +27,7 @@ from compliance.schemas import (
     ComplianceAssessment,
     DocumentInfo,
     HealthStatus,
+    PostureReport,
     ProblemDetail,
     QueryRequest,
     ReadinessStatus,
@@ -149,6 +152,14 @@ def _install_read_routes(app: FastAPI) -> None:
     async def documents(request: Request) -> list[DocumentInfo]:
         return await _services(request).documents.list_documents()
 
+    @app.get("/reports/posture", response_model=PostureReport)
+    async def posture_report(
+        request: Request, start: date | None = None, end: date | None = None
+    ) -> PostureReport:
+        report_end = end or date.today()
+        report_start = start or report_end - timedelta(days=6)
+        return await _services(request).reports.build(report_start, report_end)
+
 
 def _install_action_routes(app: FastAPI) -> None:
     @app.post("/query", response_model=Answer)
@@ -177,7 +188,14 @@ def _install_action_routes(app: FastAPI) -> None:
             actor="api",
             action="screen.completed",
             subject_id=payload.txn_id,
-            payload=payload.model_dump(mode="json"),
+            payload=cast(
+                JsonValue,
+                {
+                    "risk_rating": assessment.risk_rating.value,
+                    "unresolved_questions": len(assessment.unresolved_questions),
+                    "applicable_regulations": assessment.applicable_regulations,
+                },
+            ),
         )
         await _services(request).audit.write(event)
         return assessment

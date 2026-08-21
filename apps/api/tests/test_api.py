@@ -13,6 +13,7 @@ from compliance.api.service import (
     QueryService,
 )
 from compliance.config.settings import Settings
+from compliance.reporting import PostureReportRepository
 from compliance.retrieval.rerank import BgeReranker
 from compliance.schemas import Clause, RetrievedClause
 from fastapi.testclient import TestClient
@@ -160,6 +161,7 @@ def _services(*, qdrant_healthy: bool = True) -> tuple[ApiServices, _Connection]
         documents=DocumentRepository(pool),
         readiness=DependencyChecker(pool, _QdrantHealth(healthy=qdrant_healthy), settings),
         screening=build_agent(_Searcher(), audit, settings, MemorySaver()),
+        reports=PostureReportRepository(pool),
     )
     return services, connection
 
@@ -173,7 +175,9 @@ def test_openapi_schema_generates_without_warnings() -> None:
         schema = app.openapi()
 
     assert not warnings
-    assert {"/query", "/screen", "/readyz", "/documents"} <= set(schema["paths"])
+    assert {"/query", "/screen", "/readyz", "/documents", "/reports/posture"} <= set(
+        schema["paths"]
+    )
 
 
 def test_readyz_names_failed_qdrant_dependency() -> None:
@@ -217,6 +221,10 @@ def test_screen_runs_agent_and_writes_audit_events() -> None:
     assert "agent.extract.completed" in actions
     assert "agent.validate.completed" in actions
     assert "screen.completed" in actions
+    screen_event = next(
+        args for _query, args in connection.executed if args[1] == "screen.completed"
+    )
+    assert '"risk_rating":"medium"' in str(screen_event[3])
 
 
 def test_validation_errors_use_problem_details() -> None:
