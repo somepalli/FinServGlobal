@@ -12,6 +12,7 @@ from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedR
 from compliance.agent.graph import PostgresScreeningService
 from compliance.config.settings import Settings
 from compliance.db import DatabasePool
+from compliance.reporting import LocalReportNarrator, PostureReportRepository
 from compliance.retrieval.answer import LocalLlmGenerator, build_answer
 from compliance.retrieval.embed import BgeM3Embedder
 from compliance.retrieval.rerank import BgeReranker
@@ -209,12 +210,14 @@ class ApiServices:
         documents: DocumentRepository,
         readiness: DependencyChecker,
         screening: _Screening,
+        reports: PostureReportRepository,
     ) -> None:
         self.query = query
         self.audit = audit
         self.documents = documents
         self.readiness = readiness
         self.screening = screening
+        self.reports = reports
 
 
 def create_services(settings: Settings, pool: DatabasePool, qdrant: QdrantClient) -> ApiServices:
@@ -234,4 +237,5 @@ def create_services(settings: Settings, pool: DatabasePool, qdrant: QdrantClient
         documents=DocumentRepository(pool),
         readiness=DependencyChecker(pool, qdrant, settings),
         screening=PostgresScreeningService(searcher, audit, settings),
+        reports=PostureReportRepository(pool, LocalReportNarrator(settings)),
     )

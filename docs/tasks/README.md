@@ -17,3 +17,4 @@ One task per Codex session. Do not batch. After each: review the diff, run
 | 10 | Evaluation harness | Sat |
 | 11 | Helm templates | Sun |
 | 12 | Next.js demo UI | Sun |
+| 13 | Compliance posture reporting | Post-roadmap |

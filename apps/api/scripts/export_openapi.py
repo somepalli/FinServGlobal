@@ -3,7 +3,7 @@ from pathlib import Path
 
 from compliance.api.main import app
 
-WEB_PATHS = ("/query", "/screen")
+WEB_PATHS = ("/query", "/screen", "/reports/posture")
 
 
 def _references(value: object) -> set[str]:

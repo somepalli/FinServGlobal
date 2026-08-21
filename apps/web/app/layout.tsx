@@ -22,6 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <nav aria-label="Primary navigation">
             <Link href="/">Regulatory query</Link>
             <Link href="/screen">Transaction screening</Link>
+            <Link href="/reports">Compliance posture</Link>
           </nav>
         </header>
         {children}

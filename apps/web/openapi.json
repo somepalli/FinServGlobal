@@ -1,6 +1,26 @@
 {
   "components": {
     "schemas": {
+      "ActivityCounts": {
+        "properties": {
+          "regulatory_queries": {
+            "minimum": 0.0,
+            "title": "Regulatory Queries",
+            "type": "integer"
+          },
+          "transaction_screenings": {
+            "minimum": 0.0,
+            "title": "Transaction Screenings",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "regulatory_queries",
+          "transaction_screenings"
+        ],
+        "title": "ActivityCounts",
+        "type": "object"
+      },
       "Answer": {
         "properties": {
           "as_of": {
@@ -146,6 +166,32 @@
         "title": "ComplianceAssessment",
         "type": "object"
       },
+      "DailyActivity": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "regulatory_queries": {
+            "minimum": 0.0,
+            "title": "Regulatory Queries",
+            "type": "integer"
+          },
+          "transaction_screenings": {
+            "minimum": 0.0,
+            "title": "Transaction Screenings",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day",
+          "regulatory_queries",
+          "transaction_screenings"
+        ],
+        "title": "DailyActivity",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -157,6 +203,68 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "PostureReport": {
+        "properties": {
+          "activity": {
+            "$ref": "#/components/schemas/ActivityCounts"
+          },
+          "commentary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commentary"
+          },
+          "commentary_generated": {
+            "default": false,
+            "title": "Commentary Generated",
+            "type": "boolean"
+          },
+          "daily_activity": {
+            "items": {
+              "$ref": "#/components/schemas/DailyActivity"
+            },
+            "title": "Daily Activity",
+            "type": "array"
+          },
+          "period": {
+            "$ref": "#/components/schemas/ReportPeriod"
+          },
+          "previous_activity": {
+            "$ref": "#/components/schemas/ActivityCounts"
+          },
+          "previous_period": {
+            "$ref": "#/components/schemas/ReportPeriod"
+          },
+          "risk_distribution": {
+            "items": {
+              "$ref": "#/components/schemas/RiskCount"
+            },
+            "title": "Risk Distribution",
+            "type": "array"
+          },
+          "unresolved_screenings": {
+            "minimum": 0.0,
+            "title": "Unresolved Screenings",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "period",
+          "previous_period",
+          "activity",
+          "previous_activity",
+          "risk_distribution",
+          "unresolved_screenings",
+          "daily_activity"
+        ],
+        "title": "PostureReport",
         "type": "object"
       },
       "QueryRequest": {
@@ -203,6 +311,44 @@
           "question"
         ],
         "title": "QueryRequest",
+        "type": "object"
+      },
+      "ReportPeriod": {
+        "properties": {
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "ReportPeriod",
+        "type": "object"
+      },
+      "RiskCount": {
+        "properties": {
+          "count": {
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "risk_rating": {
+            "$ref": "#/components/schemas/RiskRating"
+          }
+        },
+        "required": [
+          "risk_rating",
+          "count"
+        ],
+        "title": "RiskCount",
         "type": "object"
       },
       "RiskRating": {
@@ -437,6 +583,70 @@
           }
         },
         "summary": "Query"
+      }
+    },
+    "/reports/posture": {
+      "get": {
+        "operationId": "posture_report_reports_posture_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostureReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Posture Report"
       }
     },
     "/screen": {

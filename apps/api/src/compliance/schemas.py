@@ -253,6 +253,39 @@ class AuditEventInput(BaseModel):
     payload: JsonValue
 
 
+class ReportPeriod(BaseModel):
+    start: date
+    end: date
+
+
+class ActivityCounts(BaseModel):
+    regulatory_queries: int = Field(ge=0)
+    transaction_screenings: int = Field(ge=0)
+
+
+class RiskCount(BaseModel):
+    risk_rating: RiskRating
+    count: int = Field(ge=0)
+
+
+class DailyActivity(BaseModel):
+    day: date
+    regulatory_queries: int = Field(ge=0)
+    transaction_screenings: int = Field(ge=0)
+
+
+class PostureReport(BaseModel):
+    period: ReportPeriod
+    previous_period: ReportPeriod
+    activity: ActivityCounts
+    previous_activity: ActivityCounts
+    risk_distribution: list[RiskCount]
+    unresolved_screenings: int = Field(ge=0)
+    daily_activity: list[DailyActivity]
+    commentary: str | None = None
+    commentary_generated: bool = False
+
+
 class ProblemDetail(BaseModel):
     type: str = "about:blank"
     title: str
