@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import Literal
@@ -251,6 +251,35 @@ class AuditEventInput(BaseModel):
     action: str
     subject_id: str
     payload: JsonValue
+
+
+class AuditEvent(BaseModel):
+    event_id: int
+    actor: str
+    action: str
+    subject_id: str
+    payload: JsonValue
+    at: datetime
+
+
+class AuditDecision(BaseModel):
+    event: AuditEvent
+    transaction: TransactionPayload
+    assessment: ComplianceAssessment
+
+
+class ReplayDifference(BaseModel):
+    field: str
+    original: JsonValue
+    replayed: JsonValue
+
+
+class ReplayComparison(BaseModel):
+    subject_id: str
+    original_event_id: int
+    replay_event_id: int
+    outcome: Literal["match", "diverged"]
+    differences: list[ReplayDifference]
 
 
 class ReportPeriod(BaseModel):

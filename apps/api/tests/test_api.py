@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from datetime import date
+from datetime import UTC, date, datetime
 from types import TracebackType
 from warnings import catch_warnings, simplefilter
 
@@ -53,6 +53,7 @@ class _Connection:
                 "supersedes": None,
             }
         ]
+        self.audit_rows: dict[int, dict[str, object]] = {}
 
     async def execute(self, query: str, *args: object) -> str:
         if self.fail_execute:
@@ -66,8 +67,13 @@ class _Connection:
     async def fetch(self, query: str, *args: object) -> list[dict[str, object]]:
         return self.rows
 
-    async def fetchrow(self, query: str, *args: object) -> None:
-        return None
+    async def fetchrow(self, query: str, *args: object) -> dict[str, object] | None:
+        if "screen.completed" not in query:
+            return None
+        event_id = args[1]
+        if event_id is None and self.audit_rows:
+            return self.audit_rows[max(self.audit_rows)]
+        return self.audit_rows.get(int(str(event_id)))
 
     async def fetchval(self, query: str, *args: object) -> int:
         return 1
@@ -117,6 +123,11 @@ class _Generator:
         return "Banks must retain records for five years."
 
 
+class _UnavailableGenerator:
+    async def generate(self, question: str, clauses: list[RetrievedClause]) -> str:
+        raise OSError("LLM unavailable")
+
+
 class _RerankerModel:
     def compute_score(
         self,
@@ -156,7 +167,12 @@ def _services(*, qdrant_healthy: bool = True) -> tuple[ApiServices, _Connection]
     reranker = BgeReranker(settings, model=_RerankerModel())
     audit = AuditRepository(pool)
     services = ApiServices(
-        query=QueryService(_Searcher(), reranker, _Generator(), settings),
+        query=QueryService(
+            _Searcher(),
+            reranker,
+            _Generator() if qdrant_healthy else _UnavailableGenerator(),
+            settings,
+        ),
         audit=audit,
         documents=DocumentRepository(pool),
         readiness=DependencyChecker(pool, _QdrantHealth(healthy=qdrant_healthy), settings),
@@ -164,6 +180,27 @@ def _services(*, qdrant_healthy: bool = True) -> tuple[ApiServices, _Connection]
         reports=PostureReportRepository(pool),
     )
     return services, connection
+
+
+def _audit_decision_row(event_id: int, risk_rating: str = "high") -> dict[str, object]:
+    assessment = {
+        "txn_id": "txn-audit",
+        "risk_rating": risk_rating,
+        "applicable_regulations": ["RBI"],
+        "required_actions": ["Review transaction."],
+        "citations": [],
+        "unresolved_questions": [],
+        "model_version": "model-a",
+        "prompt_version": "prompt-a",
+    }
+    return {
+        "event_id": event_id,
+        "actor": "api",
+        "action": "screen.completed",
+        "subject_id": "txn-audit",
+        "payload": {"transaction": {"txn_id": "txn-audit"}, "assessment": assessment},
+        "at": datetime(2026, 8, 21, tzinfo=UTC),
+    }
 
 
 def test_openapi_schema_generates_without_warnings() -> None:
@@ -175,9 +212,17 @@ def test_openapi_schema_generates_without_warnings() -> None:
         schema = app.openapi()
 
     assert not warnings
-    assert {"/query", "/screen", "/readyz", "/documents", "/reports/posture"} <= set(
-        schema["paths"]
-    )
+    expected = {
+        "/query",
+        "/screen",
+        "/readyz",
+        "/documents",
+        "/reports/posture",
+        "/audit/events",
+        "/audit/decisions/{subject_id}",
+        "/audit/decisions/{subject_id}/replay",
+    }
+    assert expected <= set(schema["paths"])
 
 
 def test_readyz_names_failed_qdrant_dependency() -> None:
@@ -270,3 +315,31 @@ def test_documents_returns_version_registry() -> None:
 
     assert response.status_code == 200
     assert response.json()[0]["versions"][0]["effective_from"] == "2020-01-01"
+
+
+def test_audit_decision_works_with_qdrant_and_llm_unavailable() -> None:
+    services, connection = _services(qdrant_healthy=False)
+    connection.audit_rows[11] = _audit_decision_row(11)
+
+    with TestClient(create_app(services=services)) as client:
+        response = client.get("/audit/decisions/txn-audit")
+
+    assert response.status_code == 200
+    assert response.json()["assessment"]["risk_rating"] == "high"
+    assert response.json()["transaction"]["txn_id"] == "txn-audit"
+
+
+def test_replay_divergence_is_returned_as_an_audit_outcome() -> None:
+    services, connection = _services(qdrant_healthy=False)
+    connection.audit_rows[11] = _audit_decision_row(11)
+    connection.audit_rows[12] = _audit_decision_row(12, "blocked")
+
+    with TestClient(create_app(services=services)) as client:
+        response = client.get(
+            "/audit/decisions/txn-audit/replay",
+            params={"original_event_id": 11, "replay_event_id": 12},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["outcome"] == "diverged"
+    assert response.json()["differences"][0]["field"] == "risk_rating"
