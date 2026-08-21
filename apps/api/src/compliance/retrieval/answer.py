@@ -45,6 +45,7 @@ class _ChatRequest(BaseModel):
     model: str
     messages: list[_ChatMessage]
     temperature: float
+    max_tokens: int
 
 
 class _ChatChoice(BaseModel):
@@ -94,11 +95,15 @@ class LocalLlmGenerator:
             messages=[
                 _ChatMessage(
                     role="system",
-                    content="Cite only facts stated in the supplied regulatory sources.",
+                    content=(
+                        "Cite only facts stated in the supplied regulatory sources. "
+                        "Answer in at most three concise sentences."
+                    ),
                 ),
                 _ChatMessage(role="user", content=_source_prompt(question, clauses)),
             ],
             temperature=self._settings.llm_temperature,
+            max_tokens=self._settings.llm_max_tokens,
         )
         endpoint = f"{self._settings.llm_base_url.rstrip('/')}/chat/completions"
         try:
@@ -125,28 +130,39 @@ def _source_spans(item: RetrievedClause) -> list[str]:
     return spans or [item.clause.text]
 
 
-async def _citation_for_sentence(
-    sentence: str,
+async def _citations_for_sentences(
+    sentences: list[str],
     clauses: list[RetrievedClause],
     scorer: _SupportScorer,
-) -> Citation:
+) -> list[Citation]:
     candidates = [(item, span) for item in clauses for span in _source_spans(item) if span]
     if not candidates:
         raise AnswerGenerationError("reranked clauses contain no source text")
-    pairs = [TextPair(query=sentence, passage=span) for _item, span in candidates]
+    pairs = [
+        TextPair(query=sentence, passage=span)
+        for sentence in sentences
+        for _item, span in candidates
+    ]
     scores = await asyncio.to_thread(scorer.score_pairs, pairs)
-    if len(scores) != len(candidates):
+    if len(scores) != len(pairs):
         raise AnswerGenerationError("support scorer returned the wrong number of scores")
-    best_index = max(range(len(scores)), key=scores.__getitem__)
-    item, quote = candidates[best_index]
-    return Citation(
-        clause_id=item.clause.clause_id,
-        clause_path=item.clause.clause_path,
-        quote=quote,
-        support=scores[best_index],
-        effective_from=item.clause.effective_from,
-        effective_to=item.clause.effective_to,
-    )
+    citations: list[Citation] = []
+    width = len(candidates)
+    for sentence_index in range(len(sentences)):
+        offset = sentence_index * width
+        best_index = max(range(offset, offset + width), key=scores.__getitem__)
+        item, quote = candidates[best_index - offset]
+        citations.append(
+            Citation(
+                clause_id=item.clause.clause_id,
+                clause_path=item.clause.clause_path,
+                quote=quote,
+                support=scores[best_index],
+                effective_from=item.clause.effective_from,
+                effective_to=item.clause.effective_to,
+            )
+        )
+    return citations
 
 
 def _fallback(clauses: Sequence[RetrievedClause], as_of: date) -> Answer:
@@ -185,9 +201,7 @@ async def build_answer(
     sentences = _sentences(generated)
     if not sentences:
         return _fallback(clauses, active_date)
-    citations = [
-        await _citation_for_sentence(sentence, clauses, active_scorer) for sentence in sentences
-    ]
+    citations = await _citations_for_sentences(sentences, clauses, active_scorer)
     if fmean(citation.support for citation in citations) < settings.min_citation_support:
         return _fallback(clauses, active_date)
     return Answer(

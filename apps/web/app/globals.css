@@ -80,6 +80,8 @@ h1 { margin: 0; max-width: 760px; font-family: Georgia, serif; font-size: clamp(
 .input-card { display: grid; gap: 14px; padding: 28px; border-top: 4px solid var(--green); }
 label { font-size: 14px; font-weight: 760; }
 label span { color: var(--muted); font-weight: 500; }
+.form-hint { margin: -5px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.form-hint a { color: var(--green); font-weight: 700; }
 textarea, input {
   width: 100%;
   border: 1px solid #c7c3b8;
@@ -107,6 +109,12 @@ button {
 button:hover { background: #084735; }
 button:disabled { cursor: wait; opacity: 0.65; }
 .json-form textarea { font-family: "Cascadia Code", Consolas, monospace; font-size: 14px; }
+.query-progress { display: flex; align-items: center; gap: 14px; padding: 15px 16px; color: #285141; background: var(--green-light); }
+.query-progress p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.progress-spinner { width: 20px; height: 20px; flex: 0 0 auto; border: 3px solid rgba(13, 92, 69, 0.22); border-top-color: var(--green); border-radius: 50%; animation: spin 0.9s linear infinite; }
+.result-anchor { scroll-margin-top: 24px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .error-banner, .support-warning { padding: 18px 20px; border-left: 4px solid var(--danger); background: #f9e8e5; }
 .error-banner { margin: 0; color: #762020; }
