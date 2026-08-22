@@ -137,4 +137,5 @@ class RegulationStore:
 
 
 def create_store(settings: Settings) -> RegulationStore:
-    return RegulationStore(QdrantClient(url=settings.qdrant_url), settings)
+    qdrant = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key_value)
+    return RegulationStore(qdrant, settings)

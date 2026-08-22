@@ -361,7 +361,22 @@
         "title": "RiskRating",
         "type": "string"
       },
-      "TransactionPayload": {
+      "TransactionDescriptionRequest": {
+        "properties": {
+          "description": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description"
+        ],
+        "title": "TransactionDescriptionRequest",
+        "type": "object"
+      },
+      "TransactionPayload-Input": {
         "additionalProperties": true,
         "properties": {
           "amount": {
@@ -582,6 +597,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "summary": "Query"
       }
     },
@@ -646,6 +666,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "summary": "Posture Report"
       }
     },
@@ -656,7 +681,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TransactionPayload"
+                "$ref": "#/components/schemas/TransactionPayload-Input"
               }
             }
           },
@@ -684,7 +709,55 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "summary": "Screen"
+      }
+    },
+    "/screen/from-description": {
+      "post": {
+        "operationId": "screen_from_description_screen_from_description_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionDescriptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplianceAssessment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Screen From Description"
       }
     }
   }

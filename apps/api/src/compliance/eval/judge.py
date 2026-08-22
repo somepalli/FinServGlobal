@@ -54,7 +54,11 @@ def _metrics(client: AsyncOpenAI, settings: Settings) -> tuple[_Metric, _Metric,
         tuple[_Metric, _Metric, _Metric, _Metric],
         (
             Faithfulness(llm),
-            AnswerRelevancy(llm, embeddings, strictness=1),
+            # strictness=1 generates a single question per answer, so one spurious
+            # "noncommittal" classification from the judge model zeroes the whole
+            # score with no averaging. RAGAS's own default (3) generates several
+            # questions so one bad classification doesn't dominate the result.
+            AnswerRelevancy(llm, embeddings, strictness=3),
             ContextPrecision(llm),
             ContextRecall(llm),
         ),

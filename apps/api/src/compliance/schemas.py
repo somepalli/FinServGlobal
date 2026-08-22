@@ -146,6 +146,10 @@ class QueryRequest(BaseModel):
     jurisdictions: list[Literal["IN", "EU", "US", "GLOBAL"]] | None = None
 
 
+class TransactionDescriptionRequest(BaseModel):
+    description: str = Field(min_length=1, max_length=2000)
+
+
 class TransactionPayload(BaseModel):
     model_config = ConfigDict(extra="allow")
 

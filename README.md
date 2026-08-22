@@ -10,8 +10,13 @@
 
 ## Running locally
 
+The API requires `COMPLIANCE_API_KEY` - unset, it rejects every request rather than
+serving them unauthenticated. Set `COMPLIANCE_QDRANT_API_KEY` too if the local Qdrant
+container is configured with `QDRANT__SERVICE__API_KEY`.
+
     docker compose up -d qdrant postgres
     uv sync --locked
+    export COMPLIANCE_API_KEY=local-dev-key
     uv run python -m compliance.ingest.run          # indexes data/corpus
     uv run uvicorn compliance.api.main:app --reload
     pnpm -C apps/web install --frozen-lockfile --ignore-scripts && pnpm -C apps/web dev

@@ -7,7 +7,12 @@ export type Citation = components["schemas"]["Citation"];
 export type ComplianceAssessment = components["schemas"]["ComplianceAssessment"];
 export type PostureReport = components["schemas"]["PostureReport"];
 export type QueryRequest = components["schemas"]["QueryRequest"];
-export type TransactionPayload = components["schemas"]["TransactionPayload"];
+// TransactionPayload has a Decimal field, so FastAPI emits separate
+// validation/serialization schemas. This app only ever sends the payload
+// (never receives one back), so the input variant is the correct shape.
+export type TransactionPayload = components["schemas"]["TransactionPayload-Input"];
+export type TransactionDescriptionRequest =
+  components["schemas"]["TransactionDescriptionRequest"];
 
 class ApiUnavailableError extends Error {}
 
@@ -19,12 +24,32 @@ function endpoint(path: string): string {
   return `${baseUrl.replace(/\/$/, "")}${path}`;
 }
 
+function authHeaders(): Record<string, string> {
+  const apiKey = process.env.COMPLIANCE_API_KEY;
+  if (!apiKey) {
+    throw new Error("COMPLIANCE_API_KEY is not configured");
+  }
+  return { "X-API-Key": apiKey };
+}
+
+async function errorMessage(response: globalThis.Response): Promise<string> {
+  try {
+    const body: unknown = await response.json();
+    if (body && typeof body === "object" && typeof (body as { detail?: unknown }).detail === "string") {
+      return (body as { detail: string }).detail;
+    }
+  } catch {
+    // Response body was not JSON; fall through to the generic message.
+  }
+  return `API request failed (${response.status})`;
+}
+
 async function post<Response>(path: string, body: unknown): Promise<Response> {
   let response: globalThis.Response;
   try {
     response = await fetch(endpoint(path), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(body),
       cache: "no-store",
     });
@@ -35,7 +60,7 @@ async function post<Response>(path: string, body: unknown): Promise<Response> {
     );
   }
   if (!response.ok) {
-    throw new Error(`API request failed (${response.status})`);
+    throw new Error(await errorMessage(response));
   }
   return (await response.json()) as Response;
 }
@@ -43,7 +68,7 @@ async function post<Response>(path: string, body: unknown): Promise<Response> {
 async function get<Response>(path: string): Promise<Response> {
   let response: globalThis.Response;
   try {
-    response = await fetch(endpoint(path), { cache: "no-store" });
+    response = await fetch(endpoint(path), { headers: authHeaders(), cache: "no-store" });
   } catch (error: unknown) {
     throw new ApiUnavailableError(
       "Compliance API is unavailable. Start its local services and retry.",
@@ -51,7 +76,7 @@ async function get<Response>(path: string): Promise<Response> {
     );
   }
   if (!response.ok) {
-    throw new Error(`API request failed (${response.status})`);
+    throw new Error(await errorMessage(response));
   }
   return (await response.json()) as Response;
 }
@@ -64,6 +89,12 @@ export function screenTransaction(
   request: TransactionPayload,
 ): Promise<ComplianceAssessment> {
   return post<ComplianceAssessment>("/screen", request);
+}
+
+export function screenTransactionDescription(
+  request: TransactionDescriptionRequest,
+): Promise<ComplianceAssessment> {
+  return post<ComplianceAssessment>("/screen/from-description", request);
 }
 
 export function getPostureReport(start?: string, end?: string): Promise<PostureReport> {

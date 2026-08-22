@@ -181,7 +181,8 @@ class HybridSearcher:
 @lru_cache(maxsize=1)
 def _default_searcher() -> HybridSearcher:
     settings = get_settings()
-    return HybridSearcher(QdrantClient(url=settings.qdrant_url), BgeM3Embedder(settings), settings)
+    qdrant = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key_value)
+    return HybridSearcher(qdrant, BgeM3Embedder(settings), settings)
 
 
 async def search(

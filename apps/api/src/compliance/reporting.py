@@ -6,6 +6,7 @@ from json import JSONDecodeError
 from typing import Literal, Protocol, cast
 
 import httpx
+import structlog
 from pydantic import BaseModel, ValidationError
 
 from compliance.config.settings import Settings
@@ -21,6 +22,7 @@ from compliance.schemas import (
 )
 
 _NUMBER = re.compile(r"\d")
+_LOGGER = structlog.get_logger(__name__)
 
 
 class ReportNarrator(Protocol):
@@ -123,7 +125,8 @@ class PostureReportRepository:
             return report
         try:
             commentary = (await self._narrator.narrate(report)).strip()
-        except RuntimeError:
+        except RuntimeError as exc:
+            _LOGGER.warning("report_commentary_failed", error=str(exc))
             return report
         if not commentary or _NUMBER.search(commentary):
             return report

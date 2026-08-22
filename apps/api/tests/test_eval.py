@@ -1,3 +1,4 @@
+import pytest
 from compliance.eval.dataset import load_dataset, select_suite
 from compliance.eval.models import (
     EvaluationCase,
@@ -55,3 +56,42 @@ def test_report_includes_context_for_low_score() -> None:
 
     assert "eval-01: What is required?" in report
     assert "The retrieved regulatory context." in report
+
+
+def test_report_matches_results_to_cases_by_id_not_position() -> None:
+    case_a = EvaluationCase(
+        case_id="eval-01",
+        question="Question A.",
+        reference_answer="Answer A.",
+        ground_truth_clause_ids=["doc:v:1"],
+        suites=["ci"],
+    )
+    case_b = EvaluationCase(
+        case_id="eval-02",
+        question="Question B.",
+        reference_answer="Answer B.",
+        ground_truth_clause_ids=["doc:v:1"],
+        suites=["ci"],
+    )
+    # Results deliberately stored in the opposite order from cases, mirroring how
+    # a snapshot's stored order need not match select_suite's returned order.
+    summary = summarise("ci", "test", [_result("eval-02", 0.6), _result("eval-01", 0.9)])
+
+    report = render_report(summary, [case_a, case_b], 0.7)
+
+    assert "eval-01: Question A." not in report
+    assert "eval-02: Question B." in report
+
+
+def test_report_raises_when_a_case_has_no_matching_result() -> None:
+    case = EvaluationCase(
+        case_id="eval-01",
+        question="Question A.",
+        reference_answer="Answer A.",
+        ground_truth_clause_ids=["doc:v:1"],
+        suites=["ci"],
+    )
+    summary = summarise("ci", "test", [_result("eval-99", 0.9)])
+
+    with pytest.raises(ValueError, match="eval-01"):
+        render_report(summary, [case], 0.7)

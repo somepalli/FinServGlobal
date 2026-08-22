@@ -1,5 +1,6 @@
 """Expose query, screening, registry, and health endpoints."""
 
+import hmac
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable, MutableMapping
 from contextlib import asynccontextmanager
@@ -8,9 +9,10 @@ from typing import cast
 from uuid import uuid4
 
 import structlog
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Security
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyHeader
 from opentelemetry import trace
 from pydantic import JsonValue
 from qdrant_client import QdrantClient
@@ -18,6 +20,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 from starlette.types import StatelessLifespan
 
+from compliance.agent.extraction import TransactionExtractionError
 from compliance.api.service import ApiServices, create_services
 from compliance.config.settings import Settings, get_settings
 from compliance.db import create_pool
@@ -34,11 +37,22 @@ from compliance.schemas import (
     QueryRequest,
     ReadinessStatus,
     ReplayComparison,
+    TransactionDescriptionRequest,
     TransactionPayload,
 )
 
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
 _LOGGER = structlog.get_logger(__name__)
+
+_API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def _require_api_key(
+    request: Request, provided: str | None = Security(_API_KEY_HEADER)
+) -> None:
+    expected = cast("str | None", getattr(request.app.state, "api_key", None))
+    if not expected or not provided or not hmac.compare_digest(provided, expected):
+        raise HTTPException(status_code=401, detail="Missing or invalid API key")
 
 
 def _add_trace_id(
@@ -92,12 +106,20 @@ def _lifespan(
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if configured_services is not None:
             app.state.services = configured_services
+            app.state.api_key = (
+                configured_settings.api_key.get_secret_value()
+                if configured_settings is not None and configured_settings.api_key is not None
+                else None
+            )
             yield
             return
         settings = configured_settings or get_settings()
         pool = await create_pool(settings)
-        qdrant = QdrantClient(url=settings.qdrant_url)
+        qdrant = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key_value)
         app.state.services = create_services(settings, pool, qdrant)
+        app.state.api_key = (
+            settings.api_key.get_secret_value() if settings.api_key is not None else None
+        )
         try:
             yield
         finally:
@@ -151,11 +173,19 @@ def _install_read_routes(app: FastAPI) -> None:
             return JSONResponse(status_code=503, content=status.model_dump(mode="json"))
         return status
 
-    @app.get("/documents", response_model=list[DocumentInfo])
+    @app.get(
+        "/documents",
+        response_model=list[DocumentInfo],
+        dependencies=[Depends(_require_api_key)],
+    )
     async def documents(request: Request) -> list[DocumentInfo]:
         return await _services(request).documents.list_documents()
 
-    @app.get("/reports/posture", response_model=PostureReport)
+    @app.get(
+        "/reports/posture",
+        response_model=PostureReport,
+        dependencies=[Depends(_require_api_key)],
+    )
     async def posture_report(
         request: Request, start: date | None = None, end: date | None = None
     ) -> PostureReport:
@@ -163,7 +193,11 @@ def _install_read_routes(app: FastAPI) -> None:
         report_start = start or report_end - timedelta(days=6)
         return await _services(request).reports.build(report_start, report_end)
 
-    @app.get("/audit/events", response_model=list[AuditEvent])
+    @app.get(
+        "/audit/events",
+        response_model=list[AuditEvent],
+        dependencies=[Depends(_require_api_key)],
+    )
     async def audit_events(
         request: Request,
         subject_id: str | None = None,
@@ -171,7 +205,11 @@ def _install_read_routes(app: FastAPI) -> None:
     ) -> list[AuditEvent]:
         return await _services(request).audit.list_events(subject_id, limit)
 
-    @app.get("/audit/decisions/{subject_id}", response_model=AuditDecision)
+    @app.get(
+        "/audit/decisions/{subject_id}",
+        response_model=AuditDecision,
+        dependencies=[Depends(_require_api_key)],
+    )
     async def audit_decision(subject_id: str, request: Request) -> AuditDecision:
         try:
             return await _services(request).audit.decision(subject_id)
@@ -181,6 +219,7 @@ def _install_read_routes(app: FastAPI) -> None:
     @app.get(
         "/audit/decisions/{subject_id}/replay",
         response_model=ReplayComparison,
+        dependencies=[Depends(_require_api_key)],
     )
     async def replay_comparison(
         subject_id: str,
@@ -196,8 +235,31 @@ def _install_read_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+async def _screen_and_audit(
+    request: Request, payload: TransactionPayload
+) -> ComplianceAssessment:
+    assessment = await _services(request).screening.assess(payload, thread_id=payload.txn_id)
+    event = AuditEventInput(
+        actor="api",
+        action="screen.completed",
+        subject_id=payload.txn_id,
+        payload=cast(
+            JsonValue,
+            {
+                "risk_rating": assessment.risk_rating.value,
+                "unresolved_questions": len(assessment.unresolved_questions),
+                "applicable_regulations": assessment.applicable_regulations,
+                "transaction": payload.model_dump(mode="json"),
+                "assessment": assessment.model_dump(mode="json"),
+            },
+        ),
+    )
+    await _services(request).audit.write(event)
+    return assessment
+
+
 def _install_action_routes(app: FastAPI) -> None:
-    @app.post("/query", response_model=Answer)
+    @app.post("/query", response_model=Answer, dependencies=[Depends(_require_api_key)])
     async def query(payload: QueryRequest, request: Request) -> Answer:
         answer = await _services(request).query.answer(payload)
         event = AuditEventInput(
@@ -214,28 +276,33 @@ def _install_action_routes(app: FastAPI) -> None:
         await _services(request).audit.write(event)
         return answer
 
-    @app.post("/screen", response_model=ComplianceAssessment)
+    @app.post(
+        "/screen", response_model=ComplianceAssessment, dependencies=[Depends(_require_api_key)]
+    )
     async def screen(payload: TransactionPayload, request: Request) -> ComplianceAssessment:
-        assessment = await _services(request).screening.assess(
-            payload, thread_id=payload.txn_id
+        return await _screen_and_audit(request, payload)
+
+    @app.post(
+        "/screen/from-description",
+        response_model=ComplianceAssessment,
+        dependencies=[Depends(_require_api_key)],
+    )
+    async def screen_from_description(
+        payload: TransactionDescriptionRequest, request: Request
+    ) -> ComplianceAssessment:
+        try:
+            transaction = await _services(request).extractor.extract(payload.description)
+        except TransactionExtractionError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        await _services(request).audit.write(
+            AuditEventInput(
+                actor="api",
+                action="screen.extracted",
+                subject_id=transaction.txn_id,
+                payload={"description": payload.description},
+            )
         )
-        event = AuditEventInput(
-            actor="api",
-            action="screen.completed",
-            subject_id=payload.txn_id,
-            payload=cast(
-                JsonValue,
-                {
-                    "risk_rating": assessment.risk_rating.value,
-                    "unresolved_questions": len(assessment.unresolved_questions),
-                    "applicable_regulations": assessment.applicable_regulations,
-                    "transaction": payload.model_dump(mode="json"),
-                    "assessment": assessment.model_dump(mode="json"),
-                },
-            ),
-        )
-        await _services(request).audit.write(event)
-        return assessment
+        return await _screen_and_audit(request, transaction)
 
 
 def create_app(*, settings: Settings | None = None, services: ApiServices | None = None) -> FastAPI:

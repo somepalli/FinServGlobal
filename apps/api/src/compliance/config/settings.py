@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, PostgresDsn
+from pydantic import Field, PostgresDsn, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Jurisdiction = str  # "IN" | "EU" | "US"; validated against the document registry
@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     qdrant_collection: str = "regulations"
     qdrant_dense_size: int = Field(default=1024, gt=0)
     qdrant_upsert_batch_size: int = Field(default=64, gt=0)
+    qdrant_api_key: SecretStr | None = None
+
+    # Required to serve authenticated routes. Unset (None) means the API
+    # rejects every protected request rather than serving them unauthenticated.
+    api_key: SecretStr | None = None
 
     database_url: PostgresDsn
     database_pool_min_size: int = Field(default=0, ge=0)
@@ -62,6 +67,10 @@ class Settings(BaseSettings):
     @property
     def is_local(self) -> bool:
         return self.qdrant_url.startswith("http://localhost")
+
+    @property
+    def qdrant_api_key_value(self) -> str | None:
+        return self.qdrant_api_key.get_secret_value() if self.qdrant_api_key is not None else None
 
 
 @lru_cache

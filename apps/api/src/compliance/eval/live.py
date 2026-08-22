@@ -16,7 +16,7 @@ from compliance.retrieval.search import HybridSearcher
 
 class LiveEvaluator:
     def __init__(self, settings: Settings) -> None:
-        client = QdrantClient(url=settings.qdrant_url)
+        client = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key_value)
         embedder = BgeM3Embedder(settings)
         self._searcher = HybridSearcher(client, embedder, settings)
         self._generator = LocalLlmGenerator(settings)

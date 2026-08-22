@@ -34,6 +34,12 @@ spec:
               containerPort: 6333
             - name: grpc
               containerPort: 6334
+          env:
+            - name: QDRANT__SERVICE__API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.qdrant.existingSecret }}
+                  key: {{ .Values.qdrant.apiKeyKey }}
           livenessProbe:
             httpGet: { path: /healthz, port: http }
             initialDelaySeconds: 15

@@ -200,8 +200,9 @@ def _risk_rating(facts: TransactionFacts) -> RiskRating:
         or facts.large_exposure_threshold_exceeded is True
         or facts.appropriateness_assessed is False
     )
-    risk = RiskRating.HIGH if high_risk else RiskRating.LOW
-    return RiskRating.MEDIUM if facts.missing_fields else risk
+    if high_risk:
+        return RiskRating.HIGH
+    return RiskRating.MEDIUM if facts.missing_fields else RiskRating.LOW
 
 
 def assess_compliance(

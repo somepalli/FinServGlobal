@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { CitationPanel } from "./citation-panel";
 import { SubmitButton } from "./submit-button";
-import { assessTransaction } from "@/lib/actions";
+import { assessTransaction, assessTransactionDescription } from "@/lib/actions";
 import { initialScreenState } from "@/lib/action-state";
 import type { ComplianceAssessment } from "@/lib/api";
 
@@ -32,7 +32,26 @@ function ItemList({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-function ScreenForm({ action }: { action: (formData: FormData) => void }) {
+const DESCRIPTION_EXAMPLE =
+  "Cross-border payment of $2M to a non-KYC entity in a high-risk jurisdiction.";
+
+function DescriptionForm({ action }: { action: (formData: FormData) => void }) {
+  return (
+    <form action={action} className="input-card">
+      <label htmlFor="description">Transaction description</label>
+      <p className="form-hint">
+        Describe the transaction in plain English. The compliance agent extracts
+        the transaction facts, then runs the same screening pipeline as the
+        structured form.
+      </p>
+      <textarea id="description" name="description" rows={5} required
+        placeholder={DESCRIPTION_EXAMPLE} />
+      <SubmitButton idle="Run screening" pending="Screening…" />
+    </form>
+  );
+}
+
+function JsonForm({ action }: { action: (formData: FormData) => void }) {
   return (
     <form action={action} className="input-card json-form">
       <label htmlFor="transaction">Transaction JSON</label>
@@ -70,11 +89,39 @@ function AssessmentResult({ result }: { result: ComplianceAssessment }) {
   );
 }
 
+type ScreenMode = "describe" | "json";
+
+function ModeToggle({ mode, onChange }: { mode: ScreenMode; onChange: (mode: ScreenMode) => void }) {
+  return (
+    <div className="mode-toggle" role="tablist" aria-label="Transaction input mode">
+      <button type="button" role="tab" aria-selected={mode === "describe"}
+        className={mode === "describe" ? "active" : ""} onClick={() => onChange("describe")}>
+        Describe transaction
+      </button>
+      <button type="button" role="tab" aria-selected={mode === "json"}
+        className={mode === "json" ? "active" : ""} onClick={() => onChange("json")}>
+        Transaction JSON
+      </button>
+    </div>
+  );
+}
+
 export function ScreenWorkspace() {
-  const [state, action] = useActionState(assessTransaction, initialScreenState);
+  const [mode, setMode] = useState<ScreenMode>("describe");
+  const [descriptionState, descriptionAction] = useActionState(
+    assessTransactionDescription,
+    initialScreenState,
+  );
+  const [jsonState, jsonAction] = useActionState(assessTransaction, initialScreenState);
+  const state = mode === "describe" ? descriptionState : jsonState;
   return (
     <section className="workspace">
-      <ScreenForm action={action} />
+      <ModeToggle mode={mode} onChange={setMode} />
+      {mode === "describe" ? (
+        <DescriptionForm action={descriptionAction} />
+      ) : (
+        <JsonForm action={jsonAction} />
+      )}
       {state.error ? <p className="error-banner" role="alert">{state.error}</p> : null}
       {state.result ? <AssessmentResult result={state.result} /> : null}
     </section>

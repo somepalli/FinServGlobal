@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/screen/from-description": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Screen From Description */
+        post: operations["screen_from_description_screen_from_description_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -183,8 +200,13 @@ export interface components {
          * @enum {string}
          */
         RiskRating: "low" | "medium" | "high" | "blocked";
+        /** TransactionDescriptionRequest */
+        TransactionDescriptionRequest: {
+            /** Description */
+            description: string;
+        };
         /** TransactionPayload */
-        TransactionPayload: {
+        "TransactionPayload-Input": {
             /** Amount */
             amount?: number | string | null;
             /** Appropriateness Assessed */
@@ -306,7 +328,40 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TransactionPayload"];
+                "application/json": components["schemas"]["TransactionPayload-Input"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComplianceAssessment"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    screen_from_description_screen_from_description_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransactionDescriptionRequest"];
             };
         };
         responses: {

@@ -90,6 +90,21 @@ async def test_numeric_llm_commentary_is_never_published() -> None:
     assert not report.commentary_generated
 
 
+@pytest.mark.asyncio
+async def test_failing_narrator_still_returns_figures_without_commentary() -> None:
+    class _FailingNarrator:
+        async def narrate(self, report: PostureReport) -> str:
+            raise RuntimeError("local report commentary failed: connection refused")
+
+    report = await PostureReportRepository(_Pool(_Connection()), _FailingNarrator()).build(
+        date(2026, 8, 21), date(2026, 8, 21)
+    )
+
+    assert report.activity == ActivityCounts(regulatory_queries=3, transaction_screenings=2)
+    assert report.commentary is None
+    assert not report.commentary_generated
+
+
 def test_llm_is_never_asked_for_a_count() -> None:
     report = PostureReport(
         period=ReportPeriod(start=date(2026, 8, 21), end=date(2026, 8, 21)),

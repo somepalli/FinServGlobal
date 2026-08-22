@@ -3,6 +3,7 @@ from datetime import UTC, date, datetime
 from types import TracebackType
 from warnings import catch_warnings, simplefilter
 
+from compliance.agent.extraction import TransactionExtractionError
 from compliance.agent.graph import build_agent
 from compliance.api.main import create_app
 from compliance.api.service import (
@@ -15,7 +16,8 @@ from compliance.api.service import (
 from compliance.config.settings import Settings
 from compliance.reporting import PostureReportRepository
 from compliance.retrieval.rerank import BgeReranker
-from compliance.schemas import Clause, RetrievedClause
+from compliance.schemas import Clause, RetrievedClause, TransactionPayload
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from langgraph.checkpoint.memory import MemorySaver
 
@@ -128,6 +130,12 @@ class _UnavailableGenerator:
         raise OSError("LLM unavailable")
 
 
+class _Extractor:
+    async def extract(self, description: str) -> TransactionPayload:
+        assert description
+        return TransactionPayload(txn_id="txn-extracted-1", currency="USD")
+
+
 class _RerankerModel:
     def compute_score(
         self,
@@ -160,6 +168,15 @@ def _retrieved() -> RetrievedClause:
     )
 
 
+TEST_API_KEY = "test-only-api-key"
+_AUTH_HEADERS = {"X-API-Key": TEST_API_KEY}
+
+
+def _authed_app(services: ApiServices) -> FastAPI:
+    settings = Settings(database_url="postgresql://u:p@localhost/db", api_key=TEST_API_KEY)
+    return create_app(settings=settings, services=services)
+
+
 def _services(*, qdrant_healthy: bool = True) -> tuple[ApiServices, _Connection]:
     settings = Settings(database_url="postgresql://u:p@localhost/db")
     connection = _Connection()
@@ -178,6 +195,7 @@ def _services(*, qdrant_healthy: bool = True) -> tuple[ApiServices, _Connection]
         readiness=DependencyChecker(pool, _QdrantHealth(healthy=qdrant_healthy), settings),
         screening=build_agent(_Searcher(), audit, settings, MemorySaver()),
         reports=PostureReportRepository(pool),
+        extractor=_Extractor(),
     )
     return services, connection
 
@@ -237,14 +255,33 @@ def test_readyz_names_failed_qdrant_dependency() -> None:
     assert "connection refused" in qdrant["detail"]
 
 
+def test_protected_routes_reject_requests_without_an_api_key() -> None:
+    services, _connection = _services()
+
+    with TestClient(_authed_app(services)) as client:
+        response = client.post("/query", json={"question": "How long?"})
+
+    assert response.status_code == 401
+    assert response.headers["content-type"].startswith("application/problem+json")
+
+
+def test_protected_routes_reject_an_incorrect_api_key() -> None:
+    services, _connection = _services()
+
+    with TestClient(_authed_app(services)) as client:
+        response = client.get("/documents", headers={"X-API-Key": "wrong-key"})
+
+    assert response.status_code == 401
+
+
 def test_query_returns_answer_and_writes_audit_event() -> None:
     services, connection = _services()
 
-    with TestClient(create_app(services=services)) as client:
+    with TestClient(_authed_app(services)) as client:
         response = client.post(
             "/query",
             json={"question": "How long must records be retained?"},
-            headers={"X-Request-ID": "request-1"},
+            headers={**_AUTH_HEADERS, "X-Request-ID": "request-1"},
         )
 
     assert response.status_code == 200
@@ -257,8 +294,10 @@ def test_query_returns_answer_and_writes_audit_event() -> None:
 def test_screen_runs_agent_and_writes_audit_events() -> None:
     services, connection = _services()
 
-    with TestClient(create_app(services=services)) as client:
-        response = client.post("/screen", json={"txn_id": "txn-1", "currency": "USD"})
+    with TestClient(_authed_app(services)) as client:
+        response = client.post(
+            "/screen", json={"txn_id": "txn-1", "currency": "USD"}, headers=_AUTH_HEADERS
+        )
 
     assert response.status_code == 200
     assert response.json()["risk_rating"] == "medium"
@@ -272,11 +311,47 @@ def test_screen_runs_agent_and_writes_audit_events() -> None:
     assert '"risk_rating":"medium"' in str(screen_event[3])
 
 
+def test_screen_from_description_extracts_then_runs_the_same_pipeline() -> None:
+    services, connection = _services()
+
+    with TestClient(_authed_app(services)) as client:
+        response = client.post(
+            "/screen/from-description",
+            json={"description": "Cross-border payment of $2M to a non-KYC entity."},
+            headers=_AUTH_HEADERS,
+        )
+
+    assert response.status_code == 200
+    assert response.json()["txn_id"] == "txn-extracted-1"
+    actions = [args[1] for _query, args in connection.executed]
+    assert "screen.extracted" in actions
+    assert "screen.completed" in actions
+
+
+def test_screen_from_description_rejects_an_unparseable_description() -> None:
+    class _FailingExtractor:
+        async def extract(self, description: str) -> TransactionPayload:
+            raise TransactionExtractionError("local LLM returned no choices")
+
+    services, _connection = _services()
+    services.extractor = _FailingExtractor()  # type: ignore[assignment]
+
+    with TestClient(_authed_app(services)) as client:
+        response = client.post(
+            "/screen/from-description",
+            json={"description": "garbled input"},
+            headers=_AUTH_HEADERS,
+        )
+
+    assert response.status_code == 422
+    assert response.headers["content-type"].startswith("application/problem+json")
+
+
 def test_validation_errors_use_problem_details() -> None:
     services, _connection = _services()
 
-    with TestClient(create_app(services=services)) as client:
-        response = client.post("/query", json={})
+    with TestClient(_authed_app(services)) as client:
+        response = client.post("/query", json={}, headers=_AUTH_HEADERS)
 
     assert response.status_code == 422
     assert response.headers["content-type"].startswith("application/problem+json")
@@ -298,8 +373,8 @@ def test_unexpected_errors_hide_stack_traces() -> None:
     services, connection = _services()
     connection.fail_execute = True
 
-    with TestClient(create_app(services=services), raise_server_exceptions=False) as client:
-        response = client.post("/screen", json={"txn_id": "txn-1"})
+    with TestClient(_authed_app(services), raise_server_exceptions=False) as client:
+        response = client.post("/screen", json={"txn_id": "txn-1"}, headers=_AUTH_HEADERS)
 
     assert response.status_code == 500
     assert response.headers["content-type"].startswith("application/problem+json")
@@ -310,8 +385,8 @@ def test_unexpected_errors_hide_stack_traces() -> None:
 def test_documents_returns_version_registry() -> None:
     services, _connection = _services()
 
-    with TestClient(create_app(services=services)) as client:
-        response = client.get("/documents")
+    with TestClient(_authed_app(services)) as client:
+        response = client.get("/documents", headers=_AUTH_HEADERS)
 
     assert response.status_code == 200
     assert response.json()[0]["versions"][0]["effective_from"] == "2020-01-01"
@@ -321,8 +396,8 @@ def test_audit_decision_works_with_qdrant_and_llm_unavailable() -> None:
     services, connection = _services(qdrant_healthy=False)
     connection.audit_rows[11] = _audit_decision_row(11)
 
-    with TestClient(create_app(services=services)) as client:
-        response = client.get("/audit/decisions/txn-audit")
+    with TestClient(_authed_app(services)) as client:
+        response = client.get("/audit/decisions/txn-audit", headers=_AUTH_HEADERS)
 
     assert response.status_code == 200
     assert response.json()["assessment"]["risk_rating"] == "high"
@@ -334,10 +409,11 @@ def test_replay_divergence_is_returned_as_an_audit_outcome() -> None:
     connection.audit_rows[11] = _audit_decision_row(11)
     connection.audit_rows[12] = _audit_decision_row(12, "blocked")
 
-    with TestClient(create_app(services=services)) as client:
+    with TestClient(_authed_app(services)) as client:
         response = client.get(
             "/audit/decisions/txn-audit/replay",
             params={"original_event_id": 11, "replay_event_id": 12},
+            headers=_AUTH_HEADERS,
         )
 
     assert response.status_code == 200

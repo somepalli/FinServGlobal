@@ -40,6 +40,11 @@ spec:
           env:
             - name: API_BASE_URL
               value: http://{{ include "compliance.fullname" . }}-api:8000
+            - name: COMPLIANCE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.api.existingSecret }}
+                  key: {{ .Values.api.apiKeyKey }}
           livenessProbe:
             httpGet: { path: /, port: http }
             initialDelaySeconds: 10

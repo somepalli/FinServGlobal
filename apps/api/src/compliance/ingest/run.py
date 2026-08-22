@@ -222,15 +222,23 @@ async def _ingest_document(
     embedder: BgeM3Embedder,
     resume: bool,
 ) -> tuple[int, int]:
-    parsed = parse_document(source)
-    clauses = chunk_document(parsed, _metadata(document))
+    parsed = await asyncio.to_thread(parse_document, source)
+    clauses = await asyncio.to_thread(chunk_document, parsed, _metadata(document))
     persisted = await persist_document(pool, document, source, clauses)
-    store.ensure_collection()
+    await asyncio.to_thread(store.ensure_collection)
     if persisted.predecessor_version is not None:
-        store.close_version(document.doc_id, persisted.predecessor_version, document.effective_from)
-    missing = store.missing_clause_ids([clause.clause_id for clause in clauses])
+        await asyncio.to_thread(
+            store.close_version,
+            document.doc_id,
+            persisted.predecessor_version,
+            document.effective_from,
+        )
+    missing = await asyncio.to_thread(
+        store.missing_clause_ids, [clause.clause_id for clause in clauses]
+    )
     selected = [clause for clause in clauses if not resume or clause.clause_id in missing]
-    store.upsert(selected, embedder.embed(selected))
+    embedded = await asyncio.to_thread(embedder.embed, selected)
+    await asyncio.to_thread(store.upsert, selected, embedded)
     return len(clauses), len(selected)
 
 

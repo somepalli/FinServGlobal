@@ -8,6 +8,7 @@ import asyncpg  # type: ignore[import-untyped]  # The package has no PEP 561 mar
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
 
+from compliance.agent.extraction import LocalTransactionExtractor
 from compliance.agent.graph import PostgresScreeningService
 from compliance.audit import AuditRepository
 from compliance.config.settings import Settings
@@ -61,6 +62,10 @@ class _Screening(Protocol):
     async def assess(
         self, payload: TransactionPayload, *, thread_id: str
     ) -> ComplianceAssessment: ...
+
+
+class _TransactionExtractor(Protocol):
+    async def extract(self, description: str) -> TransactionPayload: ...
 
 
 class QueryService:
@@ -191,6 +196,7 @@ class ApiServices:
         readiness: DependencyChecker,
         screening: _Screening,
         reports: PostureReportRepository,
+        extractor: _TransactionExtractor,
     ) -> None:
         self.query = query
         self.audit = audit
@@ -198,6 +204,7 @@ class ApiServices:
         self.readiness = readiness
         self.screening = screening
         self.reports = reports
+        self.extractor = extractor
 
 
 def create_services(settings: Settings, pool: DatabasePool, qdrant: QdrantClient) -> ApiServices:
@@ -218,4 +225,5 @@ def create_services(settings: Settings, pool: DatabasePool, qdrant: QdrantClient
         readiness=DependencyChecker(pool, qdrant, settings),
         screening=PostgresScreeningService(searcher, audit, settings),
         reports=PostureReportRepository(pool, LocalReportNarrator(settings)),
+        extractor=LocalTransactionExtractor(settings),
     )

@@ -71,6 +71,22 @@ h1 { margin: 0; max-width: 760px; font-family: Georgia, serif; font-size: clamp(
 .lede { max-width: 680px; margin: 25px 0 0; color: var(--muted); font-size: 18px; line-height: 1.65; }
 
 .workspace { display: grid; gap: 24px; }
+.mode-toggle { display: flex; gap: 2px; }
+.mode-toggle button {
+  justify-self: unset;
+  min-width: 0;
+  padding: 10px 18px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 700;
+}
+.mode-toggle button:hover { background: var(--green-light); color: var(--ink); }
+.mode-toggle button.active { color: white; background: var(--green); border-color: var(--green); }
+.mode-toggle button:first-child { border-radius: 3px 0 0 3px; }
+.mode-toggle button:last-child { border-radius: 0 3px 3px 0; border-left: 0; }
 .input-card, .answer-card, .assessment-card, .evidence-panel {
   border: 1px solid var(--line);
   background: var(--surface);

@@ -3,6 +3,7 @@
 import {
   queryRegulations,
   screenTransaction,
+  screenTransactionDescription,
   type QueryRequest,
   type TransactionPayload,
 } from "./api";
@@ -48,6 +49,21 @@ export async function assessTransaction(
   try {
     const request = transactionFrom(String(formData.get("transaction") ?? ""));
     return { result: await screenTransaction(request), error: null };
+  } catch (error: unknown) {
+    return { result: null, error: message(error) };
+  }
+}
+
+export async function assessTransactionDescription(
+  _previous: ScreenState,
+  formData: FormData,
+): Promise<ScreenState> {
+  const description = String(formData.get("description") ?? "").trim();
+  if (!description) {
+    return { result: null, error: "Describe the transaction." };
+  }
+  try {
+    return { result: await screenTransactionDescription({ description }), error: null };
   } catch (error: unknown) {
     return { result: null, error: message(error) };
   }

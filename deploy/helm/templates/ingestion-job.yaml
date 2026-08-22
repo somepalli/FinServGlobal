@@ -41,6 +41,11 @@ spec:
                   key: {{ .Values.postgres.databaseUrlKey }}
             - name: COMPLIANCE_QDRANT_URL
               value: http://{{ include "compliance.fullname" . }}-qdrant:6333
+            - name: COMPLIANCE_QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.qdrant.existingSecret }}
+                  key: {{ .Values.qdrant.apiKeyKey }}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: ["ALL"] }

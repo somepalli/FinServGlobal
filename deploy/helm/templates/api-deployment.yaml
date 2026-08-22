@@ -45,6 +45,16 @@ spec:
                   key: {{ .Values.postgres.databaseUrlKey }}
             - name: COMPLIANCE_QDRANT_URL
               value: http://{{ include "compliance.fullname" . }}-qdrant:6333
+            - name: COMPLIANCE_QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.qdrant.existingSecret }}
+                  key: {{ .Values.qdrant.apiKeyKey }}
+            - name: COMPLIANCE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.api.existingSecret }}
+                  key: {{ .Values.api.apiKeyKey }}
             - name: COMPLIANCE_LLM_BASE_URL
               value: http://{{ include "compliance.fullname" . }}-vllm:8000/v1
             - name: COMPLIANCE_LLM_MODEL

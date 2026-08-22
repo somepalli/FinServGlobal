@@ -1,0 +1,30 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "compliance.fullname" . }}-qdrant-ingress
+  labels:
+    {{- include "compliance.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "compliance.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: qdrant
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "compliance.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: api
+      ports:
+        - { protocol: TCP, port: 6333 }
+        - { protocol: TCP, port: 6334 }
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "compliance.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: ingestion
+      ports:
+        - { protocol: TCP, port: 6333 }
+{{- end }}

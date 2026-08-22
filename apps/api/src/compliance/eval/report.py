@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from compliance.eval.models import EvaluationCase, EvaluationSummary
+from compliance.eval.models import EvaluationCase, EvaluationResult, EvaluationSummary
 
 
 def default_report_path() -> Path:
@@ -20,8 +20,7 @@ def _score_table(summary: EvaluationSummary) -> str:
     )
 
 
-def _failure(case: EvaluationCase, summary: EvaluationSummary, index: int) -> str:
-    result = summary.results[index]
+def _failure(case: EvaluationCase, result: EvaluationResult) -> str:
     contexts = "\n\n".join(
         f"> {context.replace(chr(10), ' ')[:1200].rstrip()}"
         for context in result.observation.retrieved_contexts
@@ -39,11 +38,14 @@ def _failure(case: EvaluationCase, summary: EvaluationSummary, index: int) -> st
 def render_report(
     summary: EvaluationSummary, cases: list[EvaluationCase], failure_score: float
 ) -> str:
-    failures = [
-        _failure(case, summary, index)
-        for index, case in enumerate(cases)
-        if summary.results[index].scores.lowest < failure_score
-    ]
+    results_by_case_id = {result.observation.case_id: result for result in summary.results}
+    failures = []
+    for case in cases:
+        result = results_by_case_id.get(case.case_id)
+        if result is None:
+            raise ValueError(f"no evaluation result for case {case.case_id}")
+        if result.scores.lowest < failure_score:
+            failures.append(_failure(case, result))
     analysis = "\n\n".join(failures) or "No question scored below the failure threshold."
     return (
         "# Evaluation report\n\n"
