@@ -50,8 +50,9 @@ so each `RetrievedClause` retains its dense and sparse scores.
   one replica in `deploy/helm/templates/qdrant-statefulset.yaml`, so this is not
   a highly available topology.
 - Payload metadata duplicates authoritative Postgres data. To reduce drift,
-  `apps/api/src/compliance/ingest/run.py` commits the document and clauses to
-  Postgres before it calls `RegulationStore.upsert`.
+  `apps/api/src/compliance/ingest/persist.py` commits the document and clauses
+  to Postgres before `_ingest_document` in `ingest/run.py` calls
+  `RegulationStore.upsert`.
 - Filtering and fusion stay inside Qdrant, avoiding application-side merging.
   Recovery still needs a reindex path from Postgres because Qdrant is derived
   state, not the version ledger.
