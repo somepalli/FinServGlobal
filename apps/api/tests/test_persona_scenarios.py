@@ -13,6 +13,7 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
 from types import TracebackType
+from typing import cast
 
 from compliance.agent.graph import build_agent
 from compliance.api.main import create_app
@@ -24,6 +25,7 @@ from compliance.api.service import (
     QueryService,
 )
 from compliance.config.settings import Settings
+from compliance.impact import DocumentImpactAnalyzer
 from compliance.reporting import PostureReportRepository
 from compliance.retrieval.rerank import BgeReranker
 from compliance.schemas import Clause, RetrievedClause, TransactionPayload
@@ -59,6 +61,10 @@ class _Connection:
         self.rows: list[dict[str, object]] = []
         self.audit_rows: dict[int, dict[str, object]] = {}
         self._next_event_id = 1
+        # Document-version-impact fakes: keyed by version_id.
+        self.current_version_row: dict[str, object] | None = None
+        self.version_rows: dict[str, dict[str, object]] = {}
+        self.clause_rows: dict[str, list[dict[str, object]]] = {}
 
     async def execute(self, query: str, *args: object) -> str:
         self.executed.append((query, args))
@@ -78,6 +84,25 @@ class _Connection:
         return None
 
     async def fetch(self, query: str, *args: object) -> list[dict[str, object]]:
+        if "FROM clauses" in query:
+            return self.clause_rows.get(cast(str, args[0]), [])
+        if "jsonb_array_elements" in query:
+            prefix = cast(str, args[0]).rstrip("%")
+            matched = []
+            for row in self.audit_rows.values():
+                payload = cast(dict[str, object], row["payload"])
+                assessment = cast(dict[str, object], payload["assessment"])
+                citations = cast(list[dict[str, object]], assessment["citations"])
+                if any(cast(str, c["clause_id"]).startswith(prefix) for c in citations):
+                    matched.append(
+                        {
+                            "event_id": row["event_id"],
+                            "txn_id": row["subject_id"],
+                            "risk_rating": assessment["risk_rating"],
+                            "at": row["at"],
+                        }
+                    )
+            return matched
         if "FROM audit_events" in query:
             return [dict(row) for row in reversed(self.audit_rows.values())]
         if "payload->>'risk_rating'" in query:
@@ -89,6 +114,10 @@ class _Connection:
         return [{"day": date(2026, 8, 21), "queries": 1, "screenings": 4}]
 
     async def fetchrow(self, query: str, *args: object) -> dict[str, object] | None:
+        if "effective_to IS NULL" in query:
+            return self.current_version_row
+        if "FROM document_versions WHERE version_id" in query:
+            return self.version_rows.get(cast(str, args[0]))
         if "screen.completed" not in query:
             return None
         event_id = args[1]
@@ -232,6 +261,7 @@ def _app_and_state() -> tuple[TestClient, _Connection]:
         screening=build_agent(_ScreeningSearcher(), audit, settings, MemorySaver()),
         reports=PostureReportRepository(pool),
         extractor=_Extractor(),
+        impact=DocumentImpactAnalyzer(pool, settings),
     )
     app = create_app(settings=settings, services=services)
     return TestClient(app), connection
@@ -327,15 +357,69 @@ def test_scenario_transaction_screening_accepts_a_free_text_description() -> Non
 
 
 # ---------------------------------------------------------------------------
-# Scenario 3 (Compliance Head): regulatory change impact analysis
+# Scenario 3: regulatory change impact analysis
 # ---------------------------------------------------------------------------
 
-# No test here: the API exposes no endpoint, service, or agent tool that takes
-# a newly ingested document and reports which existing policies or transaction
-# types it affects. `CorpusDocument.covers` (schemas.py) tags each source
-# document with the transaction types it governs, but nothing reads that field
-# outside of `samples/` test fixtures (compliance.ingest.run only persists it).
-# This scenario from the brief has no corresponding implementation to test.
+
+def test_scenario_regulatory_change_impact_surfaces_affected_types_and_decisions() -> None:
+    """When a new RBI circular is ingested, identify affected transaction types
+    and existing decisions - the brief's scenario 3, verbatim."""
+    client, connection = _app_and_state()
+    doc_id = "rbi-kyc-md"
+    new_version_id = f"{doc_id}:2016-amended"
+    predecessor_version_id = f"{doc_id}:2010-original"
+
+    connection.current_version_row = {
+        "version_id": new_version_id,
+        "version": "2016-amended",
+        "supersedes": predecessor_version_id,
+    }
+    connection.version_rows = {predecessor_version_id: {"version": "2010-original"}}
+    connection.clause_rows = {
+        predecessor_version_id: [{"clause_path": "Chapter I > 1", "text": "Old KYC rule."}],
+        new_version_id: [
+            {"clause_path": "Chapter I > 1", "text": "Amended KYC rule."},
+            {"clause_path": "Chapter I > 2", "text": "A brand new obligation."},
+        ],
+    }
+    connection.audit_rows[1] = {
+        "event_id": 1,
+        "actor": "api",
+        "action": "screen.completed",
+        "subject_id": "txn-under-old-rule",
+        "payload": {
+            "assessment": {
+                "risk_rating": "high",
+                "citations": [{"clause_id": f"{predecessor_version_id}:1"}],
+            }
+        },
+        "at": datetime(2026, 8, 1, tzinfo=UTC),
+    }
+
+    with client:
+        response = client.get(f"/documents/{doc_id}/impact", headers=_AUTH)
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["doc_id"] == doc_id
+    assert body["previous_version"] == "2010-original"
+    assert set(body["affected_transaction_types"]) == {
+        "cross-border-payment",
+        "non-kyc-counterparty",
+    }
+    change_types = {item["clause_path"]: item["change_type"] for item in body["changed_clauses"]}
+    assert change_types == {"Chapter I > 1": "modified", "Chapter I > 2": "added"}
+    assert [item["txn_id"] for item in body["affected_assessments"]] == ["txn-under-old-rule"]
+
+
+def test_scenario_regulatory_change_impact_404s_for_an_unindexed_document() -> None:
+    client, connection = _app_and_state()
+    connection.current_version_row = None
+
+    with client:
+        response = client.get("/documents/nonexistent-doc/impact", headers=_AUTH)
+
+    assert response.status_code == 404
 
 
 # ---------------------------------------------------------------------------

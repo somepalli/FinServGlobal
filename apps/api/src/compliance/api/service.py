@@ -13,6 +13,7 @@ from compliance.agent.graph import PostgresScreeningService
 from compliance.audit import AuditRepository
 from compliance.config.settings import Settings
 from compliance.db import DatabasePool
+from compliance.impact import DocumentImpactAnalyzer
 from compliance.reporting import LocalReportNarrator, PostureReportRepository
 from compliance.retrieval.answer import LocalLlmGenerator, build_answer
 from compliance.retrieval.embed import BgeM3Embedder
@@ -26,6 +27,7 @@ from compliance.schemas import (
     DocumentVersionInfo,
     QueryRequest,
     ReadinessStatus,
+    RegulatoryChangeImpact,
     RetrievedClause,
     TextPair,
     TransactionPayload,
@@ -66,6 +68,10 @@ class _Screening(Protocol):
 
 class _TransactionExtractor(Protocol):
     async def extract(self, description: str) -> TransactionPayload: ...
+
+
+class _ImpactAnalyzer(Protocol):
+    async def for_current_version(self, doc_id: str) -> RegulatoryChangeImpact: ...
 
 
 class QueryService:
@@ -197,6 +203,7 @@ class ApiServices:
         screening: _Screening,
         reports: PostureReportRepository,
         extractor: _TransactionExtractor,
+        impact: _ImpactAnalyzer,
     ) -> None:
         self.query = query
         self.audit = audit
@@ -205,6 +212,7 @@ class ApiServices:
         self.screening = screening
         self.reports = reports
         self.extractor = extractor
+        self.impact = impact
 
 
 def create_services(settings: Settings, pool: DatabasePool, qdrant: QdrantClient) -> ApiServices:
@@ -226,4 +234,5 @@ def create_services(settings: Settings, pool: DatabasePool, qdrant: QdrantClient
         screening=PostgresScreeningService(searcher, audit, settings),
         reports=PostureReportRepository(pool, LocalReportNarrator(settings)),
         extractor=LocalTransactionExtractor(settings),
+        impact=DocumentImpactAnalyzer(pool, settings),
     )

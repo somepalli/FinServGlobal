@@ -24,6 +24,7 @@ from compliance.agent.extraction import TransactionExtractionError
 from compliance.api.service import ApiServices, create_services
 from compliance.config.settings import Settings, get_settings
 from compliance.db import create_pool
+from compliance.impact import DocumentNotIndexedError
 from compliance.schemas import (
     Answer,
     AuditDecision,
@@ -36,6 +37,7 @@ from compliance.schemas import (
     ProblemDetail,
     QueryRequest,
     ReadinessStatus,
+    RegulatoryChangeImpact,
     ReplayComparison,
     TransactionDescriptionRequest,
     TransactionPayload,
@@ -180,6 +182,17 @@ def _install_read_routes(app: FastAPI) -> None:
     )
     async def documents(request: Request) -> list[DocumentInfo]:
         return await _services(request).documents.list_documents()
+
+    @app.get(
+        "/documents/{doc_id}/impact",
+        response_model=RegulatoryChangeImpact,
+        dependencies=[Depends(_require_api_key)],
+    )
+    async def document_impact(doc_id: str, request: Request) -> RegulatoryChangeImpact:
+        try:
+            return await _services(request).impact.for_current_version(doc_id)
+        except DocumentNotIndexedError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     @app.get(
         "/reports/posture",

@@ -319,6 +319,29 @@ class PostureReport(BaseModel):
     commentary_generated: bool = False
 
 
+class ClauseChange(BaseModel):
+    clause_path: str
+    change_type: Literal["added", "removed", "modified"]
+    old_text: str | None = None
+    new_text: str | None = None
+
+
+class AffectedAssessment(BaseModel):
+    event_id: int
+    txn_id: str
+    risk_rating: RiskRating
+    assessed_at: datetime
+
+
+class RegulatoryChangeImpact(BaseModel):
+    doc_id: str
+    new_version: str
+    previous_version: str | None
+    affected_transaction_types: list[str]
+    changed_clauses: list[ClauseChange]
+    affected_assessments: list[AffectedAssessment]
+
+
 class ProblemDetail(BaseModel):
     type: str = "about:blank"
     title: str

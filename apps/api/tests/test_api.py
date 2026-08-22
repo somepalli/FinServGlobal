@@ -14,9 +14,15 @@ from compliance.api.service import (
     QueryService,
 )
 from compliance.config.settings import Settings
+from compliance.impact import DocumentNotIndexedError
 from compliance.reporting import PostureReportRepository
 from compliance.retrieval.rerank import BgeReranker
-from compliance.schemas import Clause, RetrievedClause, TransactionPayload
+from compliance.schemas import (
+    Clause,
+    RegulatoryChangeImpact,
+    RetrievedClause,
+    TransactionPayload,
+)
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from langgraph.checkpoint.memory import MemorySaver
@@ -136,6 +142,18 @@ class _Extractor:
         return TransactionPayload(txn_id="txn-extracted-1", currency="USD")
 
 
+class _ImpactAnalyzer:
+    async def for_current_version(self, doc_id: str) -> RegulatoryChangeImpact:
+        return RegulatoryChangeImpact(
+            doc_id=doc_id,
+            new_version="v2",
+            previous_version="v1",
+            affected_transaction_types=["cross-border-payment"],
+            changed_clauses=[],
+            affected_assessments=[],
+        )
+
+
 class _RerankerModel:
     def compute_score(
         self,
@@ -196,6 +214,7 @@ def _services(*, qdrant_healthy: bool = True) -> tuple[ApiServices, _Connection]
         screening=build_agent(_Searcher(), audit, settings, MemorySaver()),
         reports=PostureReportRepository(pool),
         extractor=_Extractor(),
+        impact=_ImpactAnalyzer(),
     )
     return services, connection
 
@@ -419,3 +438,31 @@ def test_replay_divergence_is_returned_as_an_audit_outcome() -> None:
     assert response.status_code == 200
     assert response.json()["outcome"] == "diverged"
     assert response.json()["differences"][0]["field"] == "risk_rating"
+
+
+def test_document_impact_returns_the_analyzer_result() -> None:
+    services, _connection = _services()
+
+    with TestClient(_authed_app(services)) as client:
+        response = client.get("/documents/rbi-kyc-md/impact", headers=_AUTH_HEADERS)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["doc_id"] == "rbi-kyc-md"
+    assert body["previous_version"] == "v1"
+    assert body["affected_transaction_types"] == ["cross-border-payment"]
+
+
+def test_document_impact_404s_for_an_unindexed_document() -> None:
+    class _MissingImpactAnalyzer:
+        async def for_current_version(self, doc_id: str) -> RegulatoryChangeImpact:
+            raise DocumentNotIndexedError(f"no indexed version for {doc_id}")
+
+    services, _connection = _services()
+    services.impact = _MissingImpactAnalyzer()  # type: ignore[assignment]
+
+    with TestClient(_authed_app(services)) as client:
+        response = client.get("/documents/unknown-doc/impact", headers=_AUTH_HEADERS)
+
+    assert response.status_code == 404
+    assert response.headers["content-type"].startswith("application/problem+json")
