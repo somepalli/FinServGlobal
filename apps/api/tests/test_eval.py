@@ -58,6 +58,23 @@ def test_report_includes_context_for_low_score() -> None:
     assert "The retrieved regulatory context." in report
 
 
+def test_report_explains_the_answer_relevance_metric_mismatch() -> None:
+    case = EvaluationCase(
+        case_id="eval-01",
+        question="What is required?",
+        reference_answer="The requirement.",
+        ground_truth_clause_ids=["doc:v:1"],
+        suites=["ci"],
+    )
+    summary = summarise("ci", "test", [_result(case.case_id)])
+
+    report = render_report(summary, [case], 0.7)
+
+    assert "Reading the answer relevance score" in report
+    assert "noncommittal" in report
+    assert "adr/003-guardrails.md" in report
+
+
 def test_report_matches_results_to_cases_by_id_not_position() -> None:
     case_a = EvaluationCase(
         case_id="eval-01",

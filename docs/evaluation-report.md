@@ -13,6 +13,25 @@ Commit: `task10-first-honest-run`
 | Context precision | 0.707 |
 | Context recall | 0.944 |
 
+## Reading the answer relevance score
+
+RAGAS `AnswerRelevancy` forces a score of exactly 0.0 whenever the judge classifies a
+response as noncommittal - no partial credit for the rest of the answer. I verified this
+against the raw generated text, not just the score pattern: `LocalLlmGenerator`'s system
+prompt (`retrieval/answer.py`) tells the model to say when sources are insufficient, and the
+7B generator applies that instruction to answers it actually completed, not only ones it
+could not. A single trailing hedge sentence zeroes the whole score even when everything
+above it is a correct, cited answer. Raising RAGAS's `strictness` from 1 to 3 does not help;
+the judge reaches the same noncommittal verdict every time, so there is nothing for
+repetition to average out.
+
+The three `should_refuse` cases genuinely earn a near-zero score here - that part of the
+metric is working as intended. The rest of this metric's low scores are a structural
+mismatch, not a retrieval defect: this system is built to hedge visibly rather than overclaim
+([ADR-003](adr/003-guardrails.md)), and `AnswerRelevancy` treats any hedge as evasive
+regardless of what precedes it. Faithfulness and context recall are the metrics that actually
+reflect retrieval and citation quality here, and neither is affected by this.
+
 ## Failure analysis
 
 ### eval-01: What ongoing due diligence must an RBI-regulated entity perform on customer transactions?

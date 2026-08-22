@@ -22,7 +22,10 @@ metadata into Qdrant and indexes `jurisdiction`, `framework`, `doc_id`,
 
 Use Qdrant with one `regulations` collection and two named vectors:
 
-- `dense`: 1024 dimensions with cosine distance.
+- `dense`: cosine distance, sized to `Settings.qdrant_dense_size`
+  (`apps/api/src/compliance/config/settings.py`), which defaults to 1024 to
+  match BGE-M3's dense output and is read by `RegulationStore` when it creates
+  the collection and validates each embedding in `retrieval/store.py`.
 - `sparse`: BGE-M3 lexical weights.
 
 `HybridSearcher` prefetches both vector results under the same metadata filter
