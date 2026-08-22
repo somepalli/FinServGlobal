@@ -42,7 +42,42 @@ flowchart LR
     Validate -->|valid| Complete
 ```
 
+## Change impact analysis
+
+When ingestion detects that a document version supersedes an earlier one, `impact.py` computes
+two things: which clauses changed text, and which past screening decisions cited a now-superseded
+clause. Neither computation calls the LLM. The clause diff matches on `clause_path`, not
+`clause_id` - the id embeds the version string, so it is never stable across a version bump. A
+source that renumbers a section between versions will show as a removed clause plus an added one
+rather than a modification. I accept that as a known limitation rather than building similarity
+matching to paper over it.
+
+Affected decisions come from a JSONB query over the existing `audit_events` table: every
+`screen.completed` payload whose citations start with the superseded `doc_id:version:` prefix.
+There is no separate impact table. The result is itself written back as a
+`document.impact.completed` audit event, so a change's downstream effect is discoverable the same
+way every other system-generated finding is - through the audit trail, not a bespoke report. The
+same computation is also available on demand at `GET /documents/{doc_id}/impact`, for a check that
+does not want to wait on the next ingestion run.
+
+## Posture reporting
+
+`PostureReportRepository` computes every figure - activity counts, risk distribution, period
+movement - with SQL against `audit_events`. The LLM never sees a count and is never asked to
+produce one. `_qualitative_facts` strips every digit from what reaches the narrator: it gets
+"screening activity increased" and "unresolved questions present," never a number to restate or
+get wrong. This is the same guardrail philosophy as citation validation
+([ADR-003](adr/003-guardrails.md)) applied to reporting instead of Q&A - keep the deterministic
+result and the probabilistic commentary on separate paths, and let the probabilistic one fail
+without taking the deterministic one down with it. When narration fails, `_with_commentary` logs
+the failure and returns the report with its figures intact and `commentary` left `None`; nothing
+about a posture report depends on the LLM being reachable.
+
 ## Regulated-data boundary
+
+Every route except `/healthz` and `/readyz` requires an `X-API-Key` header, checked with a
+constant-time comparison. There is no default key - an unconfigured deployment rejects every
+protected request rather than serving them unauthenticated.
 
 The [API egress NetworkPolicy](../deploy/helm/templates/api-networkpolicy.yaml) implements the
 rule that regulated text cannot leave for an external model provider. It denies every API egress
